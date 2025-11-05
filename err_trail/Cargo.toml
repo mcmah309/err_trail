@@ -2,11 +2,11 @@
 name = "err_trail"
 description = "Add context to errors through logging"
 categories = ["rust-patterns", "no-std"]
-version = "0.10.1"
+version = "0.10.2"
 edition = "2024"
 license = "Apache-2.0"
 documentation = "https://docs.rs/err_trail"
-repository = "https://github.com/mcmah309/error_trail"
+repository = "https://github.com/mcmah309/err_trail"
 
 [dependencies]
 tracing = { version = "0.1", default-features = false, optional = true }

@@ -57,7 +57,7 @@ dependencies = [
 
 [[package]]
 name = "err_trail"
-version = "0.10.1"
+version = "0.10.2"
 dependencies = [
  "defmt",
  "flaky_test",
