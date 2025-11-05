@@ -15,33 +15,36 @@ Enables support for the `tracing` or `log` or `defmt` crates. `error`, `warn`, `
 ```rust
 use err_trail::{ErrContext, ErrContextDisplay};
 
-
 fn main() {
-    let result: Result<(), &str> = Err("operation failed");
-
-    let value: Result<(), &str> = result.error("If `Err`, this message is logged as error via tracing/log/defmt");
-    let value: Result<(), &str> = result.warn("If `Err`, this message is logged as warn via tracing/log/defmt");
-    let value: Result<(), &str> = result.with_error(|err| format!("If `Err`, this message is logged as error via tracing/log/defmt: {}", err));
-    let value: Option<()> = result.ok_error(); // If `Err`, the `Err` is logged as error via tracing/log/defmt
-    let value: Option<()> = result.with_warn(|err| format!("If `Err`, this message is logged as warn via tracing/log/defmt: {}", err)).ok();
+    let value: Result<(), String> = result().error("If `Err`, this message is logged as error via tracing/log/defmt");
+    let value: Result<(), String> = result().warn("If `Err`, this message is logged as warn via tracing/log/defmt");
+    let value: Result<(), String> = result().with_error(|err| format!("If `Err`, this message is logged as error via tracing/log/defmt: {}", err));
+    let value: Option<()> = result().ok_error(); // If `Err`, the `Err` is logged as error via tracing/log/defmt
+    let value: Option<()> = result().with_warn(|err| format!("If `Err`, this message is logged as warn via tracing/log/defmt: {}", err)).ok();
     // ...etc.
 }
+
+fn result() -> Result<(), String> { Ok(()) }
 ```
 This is useful tracing context around errors. e.g.
-```rust,ignore
+```rust
+use err_trail::{ErrContext, ErrContextDisplay};
+
 fn main() {
-    let val = func().warn("`func` failed, here is some extra context like variable values")?;
-    // or
-    let val = func().consume_warn();
+    let val: Result<(), String> = result().warn("`func` failed, here is some extra context like variable values");
+    let val: Option<()> = result().ok_warn();
 }
+
+fn result() -> Result<(), String> { Ok(()) }
 ```
 rather than
-```rust,ignore
+```rust
 fn main() {
-    let val = func().inspect_err(|err| tracing::warn!("`func` failed, here is some extra context like variable values"))?;
-    // or
-    let val = func().inspect_err(|err| tracing::warn!("{}", err)).ok();
+    let val: Result<(), String> = result().inspect_err(|err| tracing::warn!("`func` failed, here is some extra context like variable values"));
+    let val: Option<()> = result().inspect_err(|err| tracing::warn!("{}", err)).ok();
 }
+
+fn result() -> Result<(), String> { Ok(()) }
 ```
 ## Notes For Libraries
 
