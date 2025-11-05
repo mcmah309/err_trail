@@ -14,7 +14,7 @@ fn main() -> i32 {
 fn log() {
     let x: Result<u32, &str> = Err("error value");
     let _: Result<u32, &str> = x.error("context around");
-    let _: Option<u32> = x.consume_info();
+    let _: Option<u32> = x.ok_info();
 }
 
 #[cfg(not(test))]
