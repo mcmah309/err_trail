@@ -43,36 +43,18 @@ mod tracing {
 
     #[traced_test]
     #[flaky_test]
-    fn test_consume_with_error() {
-        let result: Result<(), &str> = Err("");
-        let _ = result.consume_with_error(|_| "consumed with error");
-
-        assert!(logs_contain("consumed with error"));
-    }
-
-    #[traced_test]
-    #[flaky_test]
-    fn test_consume_with_warn() {
-        let result: Result<(), &str> = Err("");
-        let _ = result.consume_with_warn(|_| "consumed with warn");
-
-        assert!(logs_contain("consumed with warn"));
-    }
-
-    #[traced_test]
-    #[flaky_test]
-    fn test_consume_as_error() {
+    fn test_ok_as_error() {
         let result: Result<(), &str> = Err("consumed error");
-        let _ = result.consume_error();
+        let _ = result.ok_error();
 
         assert!(logs_contain("consumed error"));
     }
 
     #[traced_test]
     #[flaky_test]
-    fn test_consume_as_warn() {
+    fn test_ok_as_warn() {
         let result: Result<(), &str> = Err("consumed warning");
-        let _ = result.consume_warn();
+        let _ = result.ok_warn();
 
         assert!(logs_contain("consumed warning"));
     }
@@ -309,37 +291,19 @@ mod log {
     }
 
     #[flaky_test]
-    fn test_consume_with_error() {
-        clear_logs();
-        let result: Result<(), &str> = Err("");
-        let _ = result.consume_with_error(|_| "consumed with error");
-
-        assert!(logs_contain("consumed with error"));
-    }
-
-    #[flaky_test]
-    fn test_consume_with_warn() {
-        clear_logs();
-        let result: Result<(), &str> = Err("");
-        let _ = result.consume_with_warn(|_| "consumed with warn");
-
-        assert!(logs_contain("consumed with warn"));
-    }
-
-    #[flaky_test]
-    fn test_consume_as_error() {
+    fn test_ok_as_error() {
         clear_logs();
         let result: Result<(), &str> = Err("consumed error");
-        let _ = result.consume_error();
+        let _ = result.ok_error();
 
         assert!(logs_contain("consumed error"));
     }
 
     #[flaky_test]
-    fn test_consume_as_warn() {
+    fn test_ok_as_warn() {
         clear_logs();
         let result: Result<(), &str> = Err("consumed warning");
-        let _ = result.consume_warn();
+        let _ = result.ok_warn();
 
         assert!(logs_contain("consumed warning"));
     }
