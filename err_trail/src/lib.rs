@@ -41,19 +41,6 @@ pub trait ErrContext<T, E>: sealed::Sealed {
     fn with_debug<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Result<T, E>;
     /// If [`Result::Err`], lazily logging the result of [f] as a "trace".
     fn with_trace<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Result<T, E>;
-
-    /// Consumes the [`Result::Err`] of a Result. If [`Result::Err`], lazily logging the result of [f] as an "error".
-    // Represents a bad state in which the current process cannot continue.
-    fn consume_with_error<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Option<T>;
-    /// Consumes the [`Result::Err`] of a Result. If [`Result::Err`], lazily logging the result of [f] as a "warn".
-    // Represents a bad state in which the current process can continue.
-    fn consume_with_warn<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Option<T>;
-    /// Consumes the [`Result::Err`] of a Result. If [`Result::Err`], lazily logging the result of [f] as an "info".
-    fn consume_with_info<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Option<T>;
-    /// Consumes the [`Result::Err`] of a Result. If [`Result::Err`], lazily logging the result of [f] as a "debug".
-    fn consume_with_debug<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Option<T>;
-    /// Consumes the [`Result::Err`] of a Result. If [`Result::Err`], lazily logging the result of [f] as a "trace".
-    fn consume_with_trace<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Option<T>;
 }
 
 /// For logging a [`Result`] when [`Result::Err`] is encountered and [E] is [`Display`]
@@ -67,17 +54,15 @@ pub trait ErrContext<T, E>: sealed::Sealed {
 )]
 pub trait ErrContextDisplay<T, E: Display>: ErrContext<T, E> + sealed::Sealed {
     /// Consumes the [`Result::Err`] of a Result. If [`Result::Err`], logging the display of the error as an "error".
-    // Represents a bad state in which the current process cannot continue.
-    fn consume_error(self) -> Option<T>;
+    fn ok_error(self) -> Option<T>;
     /// Consumes the [`Result::Err`] of a Result. If [`Result::Err`], logging the display of the error as a "warn".
-    // Represents a bad state in which the current process can continue.
-    fn consume_warn(self) -> Option<T>;
+    fn ok_warn(self) -> Option<T>;
     /// Consumes the [`Result::Err`] of a Result. If [`Result::Err`], logging the display of the error as an "info".
-    fn consume_info(self) -> Option<T>;
+    fn ok_info(self) -> Option<T>;
     /// Consumes the [`Result::Err`] of a Result. If [`Result::Err`], logging the display of the error as a "debug".
-    fn consume_debug(self) -> Option<T>;
+    fn ok_debug(self) -> Option<T>;
     /// Consumes the [`Result::Err`] of a Result. If [`Result::Err`], logging the display of the error as a "trace".
-    fn consume_trace(self) -> Option<T>;
+    fn ok_trace(self) -> Option<T>;
 }
 
 /// For logging a [Option] when [None] is encountered.
@@ -255,101 +240,11 @@ impl<T, E> ErrContext<T, E> for Result<T, E> {
         }
         self
     }
-
-    #[inline]
-    fn consume_with_error<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Option<T> {
-        match self {
-            Ok(value) => Some(value),
-            Err(err) => {
-                #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
-                let context = f(&err);
-                #[cfg(feature = "tracing")]
-                tracing::error!("{}", context);
-                #[cfg(feature = "log")]
-                log::error!("{}", context);
-                #[cfg(feature = "defmt")]
-                defmt::error!("{}", defmt::Display2Format(&context));
-                None
-            }
-        }
-    }
-
-    #[inline]
-    fn consume_with_warn<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Option<T> {
-        match self {
-            Ok(value) => Some(value),
-            Err(err) => {
-                #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
-                let context = f(&err);
-                #[cfg(feature = "tracing")]
-                tracing::warn!("{}", context);
-                #[cfg(feature = "log")]
-                log::warn!("{}", context);
-                #[cfg(feature = "defmt")]
-                defmt::warn!("{}", defmt::Display2Format(&context));
-                None
-            }
-        }
-    }
-
-    #[inline]
-    fn consume_with_info<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Option<T> {
-        match self {
-            Ok(value) => Some(value),
-            Err(err) => {
-                #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
-                let context = f(&err);
-                #[cfg(feature = "tracing")]
-                tracing::info!("{}", context);
-                #[cfg(feature = "log")]
-                log::info!("{}", context);
-                #[cfg(feature = "defmt")]
-                defmt::info!("{}", defmt::Display2Format(&context));
-                None
-            }
-        }
-    }
-
-    #[inline]
-    fn consume_with_debug<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Option<T> {
-        match self {
-            Ok(value) => Some(value),
-            Err(err) => {
-                #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
-                let context = f(&err);
-                #[cfg(feature = "tracing")]
-                tracing::debug!("{}", context);
-                #[cfg(feature = "log")]
-                log::debug!("{}", context);
-                #[cfg(feature = "defmt")]
-                defmt::debug!("{}", defmt::Display2Format(&context));
-                None
-            }
-        }
-    }
-
-    #[inline]
-    fn consume_with_trace<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Option<T> {
-        match self {
-            Ok(value) => Some(value),
-            Err(err) => {
-                #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
-                let context = f(&err);
-                #[cfg(feature = "tracing")]
-                tracing::trace!("{}", context);
-                #[cfg(feature = "log")]
-                log::trace!("{}", context);
-                #[cfg(feature = "defmt")]
-                defmt::trace!("{}", defmt::Display2Format(&context));
-                None
-            }
-        }
-    }
 }
 
 impl<T, E: Display> ErrContextDisplay<T, E> for Result<T, E> {
     #[inline]
-    fn consume_error(self) -> Option<T> {
+    fn ok_error(self) -> Option<T> {
         match self {
             Ok(value) => Some(value),
             Err(err) => {
@@ -365,7 +260,7 @@ impl<T, E: Display> ErrContextDisplay<T, E> for Result<T, E> {
     }
 
     #[inline]
-    fn consume_warn(self) -> Option<T> {
+    fn ok_warn(self) -> Option<T> {
         match self {
             Ok(value) => Some(value),
             Err(err) => {
@@ -381,7 +276,7 @@ impl<T, E: Display> ErrContextDisplay<T, E> for Result<T, E> {
     }
 
     #[inline]
-    fn consume_info(self) -> Option<T> {
+    fn ok_info(self) -> Option<T> {
         match self {
             Ok(value) => Some(value),
             Err(err) => {
@@ -397,7 +292,7 @@ impl<T, E: Display> ErrContextDisplay<T, E> for Result<T, E> {
     }
 
     #[inline]
-    fn consume_debug(self) -> Option<T> {
+    fn ok_debug(self) -> Option<T> {
         match self {
             Ok(value) => Some(value),
             Err(err) => {
@@ -413,7 +308,7 @@ impl<T, E: Display> ErrContextDisplay<T, E> for Result<T, E> {
     }
 
     #[inline]
-    fn consume_trace(self) -> Option<T> {
+    fn ok_trace(self) -> Option<T> {
         match self {
             Ok(value) => Some(value),
             Err(err) => {
