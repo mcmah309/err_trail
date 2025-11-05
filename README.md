@@ -22,8 +22,8 @@ fn main() {
     let value: Result<(), &str> = result.error("If `Err`, this message is logged as error via tracing/log/defmt");
     let value: Result<(), &str> = result.warn("If `Err`, this message is logged as warn via tracing/log/defmt");
     let value: Result<(), &str> = result.with_error(|err| format!("If `Err`, this message is logged as error via tracing/log/defmt: {}", err));
-    let value: Option<()> = result.consume_error(); // If `Err`, the `Err` is logged as error via tracing/log/defmt
-    let value: Option<()> = result.consume_with_warn(|err| format!("If `Err`, this message is logged as warn via tracing/log/defmt: {}", err));
+    let value: Option<()> = result.ok_error(); // If `Err`, the `Err` is logged as error via tracing/log/defmt
+    let value: Option<()> = result.with_warn(|err| format!("If `Err`, this message is logged as warn via tracing/log/defmt: {}", err)).ok();
     // ...etc.
 }
 ```
@@ -51,8 +51,10 @@ This api is perfect for libraries. Downstream binaries ultimately decide the imp
 
 ![Logging Guidelines](assets/logging_guideline.png)
 
-- If returning a `Result` to the calling function, context should usually be `warn`.
+**Additional Notes**
+- If returning a `Result`, context should usually be `warn`.
 - If consuming a `Result`, context should usually be `error`.
+- `error` can also be used over `warn` for cases that should not be possible, but handling is preferred over panic in production.
 
 ## no_std
 
