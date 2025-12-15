@@ -52,56 +52,51 @@ This api is perfect for libraries. Downstream binaries ultimately decide the imp
 
 ## Guide
 
-Deciding which log level to use can be tedious. Here is an opinionated guide:
-
 ```mermaid
 flowchart TD
-    Start{For whom am I<br/>writing the log?}
-    
-    VarState{Do I need to log<br/>state of variables?}
-    UnwantedState{Do I log an<br/>unwanted state?}
-    ProcessContinue{Can the process<br/>continue with<br/>unwanted state?}
-    AppContinue{Can the<br/>application<br/>continue?}
-    
-    Error[Error]
-    Info[Info]
-    Debug[Debug]
-    Trace[Trace]
-    Warning[Warning]
-    Fatal[Fatal]
-    
-    Start -->|Developer| VarState
-    Start -->|System Operators| UnwantedState
-    
-    VarState -->|Yes| Debug
-    VarState -->|No| Trace
-    
+    Start{Is this log for debugging?}
+
+    Start -->|Yes| SessionType
+    Start -->|No| UnwantedState
+    Start -->|I'm not sure| SessionType
+    SessionType --> |Yes| Debug
+    SessionType --> |No| Trace
+    SessionType -->|I'm not sure| Trace
     UnwantedState -->|Yes| ProcessContinue
-    UnwantedState -->|No| Info
-    
+    UnwantedState -->|No| Info    
     ProcessContinue -->|Yes| Warning
-    ProcessContinue -->|No| AppContinue
-    
+    ProcessContinue -->|No| AppContinue 
     AppContinue -->|Yes| Error
     AppContinue -->|No| Fatal
+
+    UnwantedState{Is the log the result of an unwanted state?}
+    SessionType{"Is <b>any</b> true:<br/><br/>• This is temporary (I'm printf debugging now)<br/>• I am <b>reasonably certain</b> a developer will care about and won't get annoyed if hit during debugging"}
+    ProcessContinue{Can the operation<br/>continue with<br/>unwanted state?}
+    AppContinue{Can the<br/>application<br/>continue?}
     
-    style Error fill:#fad9d5
-    style Info fill:#dae8fc
-    style Debug fill:#fff2cc
-    style Trace fill:#d5e8d4
-    style Warning fill:#e3c800
-    style Fatal fill:#d5739d
+    classDef normal fill:#ffffff,stroke:#374151,color:#000;
+    classDef trace  fill:#e6d9ff,stroke:#7c3aed,color:#000;
+    classDef debug  fill:#e0f2fe,stroke:#0284c7,color:#000;
+    classDef info   fill:#d1fae5,stroke:#059669,color:#000;
+    classDef warning fill:#fde68a,stroke:#d97706,color:#000;
+    classDef error  fill:#f8b4b4,stroke:#dc2626,color:#000;
+    classDef fatal  fill:#b91c1c,stroke:#7f1d1d,color:#fff;
+
+    class Start,SessionType,UnwantedState,ProcessContinue,AppContinue normal;
+    class Trace trace;
+    class Debug debug;
+    class Info info;
+    class Warning warning;
+    class Error error;
+    class Fatal fatal;
+
+    Trace["Trace<br/><br/>• Often verbose (e.g. large variable states or hit frequently)<br/>• Usually noise during most debug sessions"]
+    Debug[Debug]
+    Info["Info<br/><br/>• For System Operators<br/>• Human readable<br/>• Usually actionable (e.g. alerts, incidents, performance, health, stability)"]
+    Warning["Warning<br/><br/>• Unwanted state/error encountered, but continuing the operation (last handler in the chain).<br/>• Note: Returning the error to the calling is <b>not</b> considered a warning or an error - most likely a trace if anything."]
+    Error["Error<br/><br/>• Operation had to be aborted. After this, the system will attempt to forget about this error (last handler in the chain)"]
+    Fatal[Fatal<br/><br/>• Panic or abort]
 ```
-
-- Are you consuming an error (Likely from a `Result<T,E>`)?
-    - Yes: you should use `error`
-    - No: Next
-- 
-
-**Additional Notes**
-- If returning a `Result`, context should usually be `warn`.
-- If consuming a `Result`, context should usually be `error`.
-- `error` can also be used over `warn` for cases that should not be possible, but handling is preferred over panic in production.
 
 ## no_std
 
