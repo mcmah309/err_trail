@@ -72,7 +72,7 @@ flowchart TD
     UnwantedState{Is the log the result of an unwanted state?}
     SessionType{"Is <b>any</b> true:<br/><br/>• This is temporary (I'm printf debugging now)<br/>• I am <b>reasonably certain</b> a developer will care about and won't get annoyed if hit during debugging"}
     ProcessContinue{Can the operation<br/>continue with<br/>unwanted state?}
-    AppContinue{Can the<br/>application<br/>continue?}
+    AppContinue{Can the<br/>process<br/>continue?}
     
     classDef normal fill:#ffffff,stroke:#374151,color:#000;
     classDef trace  fill:#e6d9ff,stroke:#7c3aed,color:#000;
