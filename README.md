@@ -52,7 +52,51 @@ This api is perfect for libraries. Downstream binaries ultimately decide the imp
 
 ## Guide
 
-![Logging Guidelines](assets/logging_guideline.png)
+Deciding which log level to use can be tedious. Here is an opinionated guide:
+
+```mermaid
+flowchart TD
+    Start{For whom am I<br/>writing the log?}
+    
+    VarState{Do I need to log<br/>state of variables?}
+    UnwantedState{Do I log an<br/>unwanted state?}
+    ProcessContinue{Can the process<br/>continue with<br/>unwanted state?}
+    AppContinue{Can the<br/>application<br/>continue?}
+    
+    Error[Error]
+    Info[Info]
+    Debug[Debug]
+    Trace[Trace]
+    Warning[Warning]
+    Fatal[Fatal]
+    
+    Start -->|Developer| VarState
+    Start -->|System Operators| UnwantedState
+    
+    VarState -->|Yes| Debug
+    VarState -->|No| Trace
+    
+    UnwantedState -->|Yes| ProcessContinue
+    UnwantedState -->|No| Info
+    
+    ProcessContinue -->|Yes| Warning
+    ProcessContinue -->|No| AppContinue
+    
+    AppContinue -->|Yes| Error
+    AppContinue -->|No| Fatal
+    
+    style Error fill:#fad9d5
+    style Info fill:#dae8fc
+    style Debug fill:#fff2cc
+    style Trace fill:#d5e8d4
+    style Warning fill:#e3c800
+    style Fatal fill:#d5739d
+```
+
+- Are you consuming an error (Likely from a `Result<T,E>`)?
+    - Yes: you should use `error`
+    - No: Next
+- 
 
 **Additional Notes**
 - If returning a `Result`, context should usually be `warn`.
