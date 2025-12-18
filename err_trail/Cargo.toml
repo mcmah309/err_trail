@@ -20,7 +20,7 @@ lazy_static = "1"
 flaky_test = "0.2"
 
 [features]
-default = ["tracing", "log"]
+default = []
 
 [package.metadata.docs.rs]
 all-features = true
