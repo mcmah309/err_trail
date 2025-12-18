@@ -1,7 +1,7 @@
 #![no_std]
 #![no_main]
 
-use err_trail::{ErrContext, ErrContextDisplay};
+use err_trail::ErrContext;
 use exit_no_std::exit;
 
 #[unsafe(no_mangle)]
@@ -14,7 +14,7 @@ fn main() -> i32 {
 fn log() {
     let x: Result<u32, &str> = Err("error value");
     let _: Result<u32, &str> = x.error("context around");
-    let _: Option<u32> = x.ok_info();
+    let _: Option<u32> = x.info(()).ok();
 }
 
 #[cfg(not(test))]
