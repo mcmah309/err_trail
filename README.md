@@ -49,8 +49,7 @@ use err_trail::ErrContext;
 fn main() {
     let value: Result<(), String> = result().error("If `Err`, this message is logged as error");
     let value: Result<(), String> = result().warn("If `Err`, this message is logged as warn");
-    // Notice these methods can also accept closures
-    // Note: Due to some limitations of Rust's type inferencing on closures, usually the input type needs to be specified - `: &String`.
+    // Notice these methods can also accept closures for lazy eval
     let value: Result<(), String> = result().error(|err: &String| format!("If `Err`, this message is logged as error: {}", err));
     // If the error type implements `Display` then `()` can be passed to log the error directly if `Err`
     let value: Result<(), String> = result().error(());
@@ -59,6 +58,8 @@ fn result() -> Result<(), String> { Ok(()) }
 ```
 
 The same methods exist for `Option` too.
+
+> Note: Due to some limitations of Rust's type inferencing on closures, for closures, usually the input type needs to be specified - e.g. `: &String`.
 
 ## Guide
 
