@@ -5,52 +5,64 @@
 [<img alt="docs.rs" src="https://img.shields.io/badge/docs.rs-err_trail-66c2a5?style=for-the-badge&labelColor=555555&logo=docs.rs" height="20">](https://docs.rs/err_trail)
 [<img alt="test status" src="https://img.shields.io/github/actions/workflow/status/mcmah309/err_trail/ci.yml?branch=master&style=for-the-badge" height="20">](https://github.com/mcmah309/err_trail/actions/workflows/ci.yml)
 
-Convience methods on `Result` and `Option` for logging when an `Err` or `None` is ecountered. Similar to [eros](https://github.com/mcmah309/eros) and [anyhow](https://github.com/dtolnay/anyhow)
-but for logging.
+A generic logging interface for libraries and binaries. Libraries remain generic and binaries pick the logging implementation(s). 
 
-## Feature Flags
+Current backends enabled by feature flags: 
+- [tracing](https://crates.io/crates/tracing)
+- [log](https://crates.io/crates/log)
+- [defmt](https://crates.io/crates/defmt) (no_std).
 
-**tracing** / **log** / **defmt** :
-Enables support for the `tracing` or `log` or `defmt` crates. `error`, `warn`, `info`, `debug`, and `trace` methods are added to `Result` and are executed when the `Result` is an `Err` for logging purposes. They work similarly to `eros`'s and `anyhow`'s `.context(..)` method. e.g.
+If no backend is selected by the binary, since all operations are inlined, they get compiled away during compilation. No overhead or downstream lock-in. Libraries can also easily enable logs for tests only.
+
+Convenience methods are also added on `Result` and `Option` for ergonomic logging when an `Err` or `None` is encountered. No need to `match` or `inspect`. Similar to context is handled in libraries like [eros](https://github.com/mcmah309/eros) or [anyhow](https://github.com/dtolnay/anyhow) but for logging.
+
+
+
+
+## In Action
+
+All methods and macros work with the generic backends. Like previously mentioned, if no backend is selected they are compiled away.
+
+### Macros
+
+Familiar `error!`, `warn!`, `info!`, `debug!`, `trace!` macros exist to log in a way similar to the built in rust `format!` macro.
+
 ```rust
-use err_trail::{ErrContext, ErrContextDisplay};
+use err_trail::{error, warn, info, debug, trace};
 
 fn main() {
-    let value: Result<(), String> = result().error("If `Err`, this message is logged as error via tracing/log/defmt");
-    let value: Result<(), String> = result().warn("If `Err`, this message is logged as warn via tracing/log/defmt");
-    let value: Result<(), String> = result().with_error(|err| format!("If `Err`, this message is logged as error via tracing/log/defmt: {}", err));
-    let value: Option<()> = result().ok_error(); // If `Err`, the `Err` is logged as error via tracing/log/defmt
-    let value: Option<()> = result().with_warn(|err| format!("If `Err`, this message is logged as warn via tracing/log/defmt: {}", err)).ok();
-    // ...etc.
+    error!("An error occurred: {}", "disk full");
+    warn!("This is a warning: {}", "high memory usage");
+    info!("Some info: {}", "service started");
+    debug!("Debugging value: {:?}", vec![1, 2, 3]);
+    trace!("Trace log: {}", "function entered");
 }
-
-fn result() -> Result<(), String> { Ok(()) }
 ```
-This is useful tracing context around errors. e.g.
+
+### New Result and Option methods
+
+New methods are added to `Result` and `Option` types - `error`, `warn`, `info`, `debug`, `trace`. These apply logs are various log levels
+
 ```rust
-use err_trail::{ErrContext, ErrContextDisplay};
+use err_trail::ErrContext;
 
 fn main() {
-    let val: Result<(), String> = result().warn("`func` failed, here is some extra context like variable values");
-    let val: Option<()> = result().ok_warn();
+    let value: Result<(), String> = result().error("If `Err`, this message is logged as error");
+    let value: Result<(), String> = result().warn("If `Err`, this message is logged as warn");
+    // Notice these methods can also accept closures
+    // Note: Due to some limitations of Rust's type inferencing on closures, usually the input type needs to be specified - `: &String`.
+    let value: Result<(), String> = result().error(|err: &String| format!("If `Err`, this message is logged as error: {}", err));
+    // If the error type implements `Display` then `()` can be passed to log the error directly if `Err`
+    let value: Result<(), String> = result().error(());
 }
-
 fn result() -> Result<(), String> { Ok(()) }
 ```
-rather than
-```rust
-fn main() {
-    let val: Result<(), String> = result().inspect_err(|err| tracing::warn!("`func` failed, here is some extra context like variable values"));
-    let val: Option<()> = result().inspect_err(|err| tracing::warn!("{}", err)).ok();
-}
 
-fn result() -> Result<(), String> { Ok(()) }
-```
-## Notes For Libraries
-
-This api is perfect for libraries. Downstream binaries ultimately decide the implementation for which logging provider to use, if any. If no implementations is selected, since all the above methods are inlined, the code becomes a no-op and will be optimized away during compilation.
+The same methods exist for `Option` too.
 
 ## Guide
+
+Opinionated guide on how to log if you are new to logging or would like a refresher:
 
 ```mermaid
 flowchart TD
