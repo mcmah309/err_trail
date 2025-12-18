@@ -89,8 +89,8 @@ flowchart TD
     
     classDef normal fill:#ffffff,stroke:#374151,color:#000;
     classDef trace  fill:#e6d9ff,stroke:#7c3aed,color:#000;
-    classDef debug  fill:#e0f2fe,stroke:#0284c7,color:#000;
-    classDef info   fill:#d1fae5,stroke:#059669,color:#000;
+    classDef debug  fill:#d1fae5,stroke:#059669,color:#000;
+    classDef info   fill:#e0f2fe,stroke:#0284c7,color:#000;
     classDef warning fill:#fde68a,stroke:#d97706,color:#000;
     classDef error  fill:#f8b4b4,stroke:#dc2626,color:#000;
     classDef fatal  fill:#b91c1c,stroke:#7f1d1d,color:#fff;
