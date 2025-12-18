@@ -13,11 +13,7 @@ mod sealed {
 /// For logging a [`Result`] when [`Result::Err`] is encountered.
 #[cfg_attr(
     docsrs,
-    doc(cfg(any(
-        feature = "tracing",
-        feature = "log",
-        feature = "defmt",
-    )))
+    doc(cfg(any(feature = "tracing", feature = "log", feature = "defmt",)))
 )]
 pub trait ErrContext<T, E>: sealed::Sealed {
     /// If [`Result::Err`], logging context as an "error".
@@ -41,38 +37,33 @@ pub trait ErrContext<T, E>: sealed::Sealed {
     fn with_debug<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Result<T, E>;
     /// If [`Result::Err`], lazily logging the result of [f] as a "trace".
     fn with_trace<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Result<T, E>;
-}
 
-/// For logging a [`Result`] when [`Result::Err`] is encountered and [E] is [`Display`]
-#[cfg_attr(
-    docsrs,
-    doc(cfg(any(
-        feature = "tracing",
-        feature = "log",
-        feature = "defmt",
-    )))
-)]
-pub trait ErrContextDisplay<T, E: Display>: ErrContext<T, E> + sealed::Sealed {
     /// Consumes the [`Result::Err`] of a Result. If [`Result::Err`], logging the display of the error as an "error".
-    fn ok_error(self) -> Option<T>;
+    fn ok_error(self) -> Option<T>
+    where
+        E: Display;
     /// Consumes the [`Result::Err`] of a Result. If [`Result::Err`], logging the display of the error as a "warn".
-    fn ok_warn(self) -> Option<T>;
+    fn ok_warn(self) -> Option<T>
+    where
+        E: Display;
     /// Consumes the [`Result::Err`] of a Result. If [`Result::Err`], logging the display of the error as an "info".
-    fn ok_info(self) -> Option<T>;
+    fn ok_info(self) -> Option<T>
+    where
+        E: Display;
     /// Consumes the [`Result::Err`] of a Result. If [`Result::Err`], logging the display of the error as a "debug".
-    fn ok_debug(self) -> Option<T>;
+    fn ok_debug(self) -> Option<T>
+    where
+        E: Display;
     /// Consumes the [`Result::Err`] of a Result. If [`Result::Err`], logging the display of the error as a "trace".
-    fn ok_trace(self) -> Option<T>;
+    fn ok_trace(self) -> Option<T>
+    where
+        E: Display;
 }
 
 /// For logging a [Option] when [None] is encountered.
 #[cfg_attr(
     docsrs,
-    doc(cfg(any(
-        feature = "tracing",
-        feature = "log",
-        feature = "defmt",
-    )))
+    doc(cfg(any(feature = "tracing", feature = "log", feature = "defmt",)))
 )]
 pub trait NoneContext<T>: sealed::Sealed {
     /// If [None], logging context as an "error".
@@ -240,11 +231,12 @@ impl<T, E> ErrContext<T, E> for Result<T, E> {
         }
         self
     }
-}
 
-impl<T, E: Display> ErrContextDisplay<T, E> for Result<T, E> {
     #[inline]
-    fn ok_error(self) -> Option<T> {
+    fn ok_error(self) -> Option<T>
+    where
+        E: Display,
+    {
         match self {
             Ok(value) => Some(value),
             Err(err) => {
@@ -260,7 +252,10 @@ impl<T, E: Display> ErrContextDisplay<T, E> for Result<T, E> {
     }
 
     #[inline]
-    fn ok_warn(self) -> Option<T> {
+    fn ok_warn(self) -> Option<T>
+    where
+        E: Display,
+    {
         match self {
             Ok(value) => Some(value),
             Err(err) => {
@@ -276,7 +271,10 @@ impl<T, E: Display> ErrContextDisplay<T, E> for Result<T, E> {
     }
 
     #[inline]
-    fn ok_info(self) -> Option<T> {
+    fn ok_info(self) -> Option<T>
+    where
+        E: Display,
+    {
         match self {
             Ok(value) => Some(value),
             Err(err) => {
@@ -292,7 +290,10 @@ impl<T, E: Display> ErrContextDisplay<T, E> for Result<T, E> {
     }
 
     #[inline]
-    fn ok_debug(self) -> Option<T> {
+    fn ok_debug(self) -> Option<T>
+    where
+        E: Display,
+    {
         match self {
             Ok(value) => Some(value),
             Err(err) => {
@@ -308,7 +309,10 @@ impl<T, E: Display> ErrContextDisplay<T, E> for Result<T, E> {
     }
 
     #[inline]
-    fn ok_trace(self) -> Option<T> {
+    fn ok_trace(self) -> Option<T>
+    where
+        E: Display,
+    {
         match self {
             Ok(value) => Some(value),
             Err(err) => {
