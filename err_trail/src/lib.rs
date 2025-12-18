@@ -3,6 +3,66 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc = include_str!("../README.md")]
 
+#[macro_export]
+macro_rules! error {
+    ($($arg:tt)*) => {
+        #[cfg(feature = "tracing")]
+        tracing::error!($($arg)*);
+        #[cfg(feature = "log")]
+        log::error!($($arg)*);
+        #[cfg(feature = "defmt")]
+        defmt::error!("{}", defmt::Display2Format(&format_args!($($arg)*)));
+    };
+}
+
+#[macro_export]
+macro_rules! warn {
+    ($($arg:tt)*) => {
+        #[cfg(feature = "tracing")]
+        tracing::warn!($($arg)*);
+        #[cfg(feature = "log")]
+        log::warn!($($arg)*);
+        #[cfg(feature = "defmt")]
+        defmt::warn!("{}", defmt::Display2Format(&format_args!($($arg)*)));
+    };
+}
+
+#[macro_export]
+macro_rules! info {
+    ($($arg:tt)*) => {
+        #[cfg(feature = "tracing")]
+        tracing::info!($($arg)*);
+        #[cfg(feature = "log")]
+        log::info!($($arg)*);
+        #[cfg(feature = "defmt")]
+        defmt::info!("{}", defmt::Display2Format(&format_args!($($arg)*)));
+    };
+}
+
+#[macro_export]
+macro_rules! debug {
+    ($($arg:tt)*) => {
+        #[cfg(feature = "tracing")]
+        tracing::debug!($($arg)*);
+        #[cfg(feature = "log")]
+        log::debug!($($arg)*);
+        #[cfg(feature = "defmt")]
+        defmt::debug!("{}", defmt::Display2Format(&format_args!($($arg)*)));
+    };
+}
+
+#[macro_export]
+macro_rules! trace {
+    ($($arg:tt)*) => {
+        #[cfg(feature = "tracing")]
+        tracing::trace!($($arg)*);
+        #[cfg(feature = "log")]
+        log::trace!($($arg)*);
+        #[cfg(feature = "defmt")]
+        defmt::trace!("{}", defmt::Display2Format(&format_args!($($arg)*)));
+    };
+}
+
 use core::fmt::Display;
 
 mod sealed {
@@ -11,10 +71,6 @@ mod sealed {
 }
 
 /// For logging a [`Result`] when [`Result::Err`] is encountered.
-#[cfg_attr(
-    docsrs,
-    doc(cfg(any(feature = "tracing", feature = "log", feature = "defmt",)))
-)]
 pub trait ErrContext<T, E>: sealed::Sealed {
     /// If [`Result::Err`], logging the display of the [`Result::Err`] as an "error".
     fn log_error(self) -> Result<T, E>
@@ -61,10 +117,6 @@ pub trait ErrContext<T, E>: sealed::Sealed {
 }
 
 /// For logging a [Option] when [None] is encountered.
-#[cfg_attr(
-    docsrs,
-    doc(cfg(any(feature = "tracing", feature = "log", feature = "defmt",)))
-)]
 pub trait NoneContext<T>: sealed::Sealed {
     /// If [None], logging context as an "error".
     fn log_error_msg(self, context: impl Display) -> Option<T>;
