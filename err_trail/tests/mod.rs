@@ -1,7 +1,7 @@
 #[cfg(feature = "tracing")]
 #[cfg(test)]
 mod tracing {
-    use err_trail::{ErrContext, NoneContext};
+    use err_trail::{ErrContext, NoneContext, debug, error, info, trace, warn};
     use flaky_test::flaky_test;
     use tracing_test::traced_test;
 
@@ -202,12 +202,35 @@ mod tracing {
 
         assert!(logs_contain("Lazy trace context"));
     }
+
+    #[traced_test]
+    #[test]
+    fn test_macros_direct_call() {
+        error!("direct error: {}", 404);
+        warn!("direct warn: {}", "low disk");
+        info!("direct info");
+        debug!("direct debug");
+        trace!("direct trace");
+
+        assert!(logs_contain("direct error: 404"));
+        assert!(logs_contain("direct warn: low disk"));
+        assert!(logs_contain("direct info"));
+        assert!(logs_contain("direct debug"));
+        assert!(logs_contain("direct trace"));
+    }
+
+    #[traced_test]
+    #[test]
+    fn test_macro_multiple_args() {
+        info!("status: {}, code: {}", "success", 200);
+        assert!(logs_contain("status: success, code: 200"));
+    }
 }
 
 #[cfg(feature = "log")]
 #[cfg(test)]
 mod log {
-    use err_trail::{ErrContext, NoneContext};
+    use err_trail::{ErrContext, NoneContext, debug, error, info, trace, warn};
     use flaky_test::flaky_test;
     use lazy_static::lazy_static;
     use log::{Level, Metadata, Record};
@@ -450,5 +473,22 @@ mod log {
         let _ = option.trace(|| "Lazy trace context");
 
         assert!(logs_contain("Lazy trace context"));
+    }
+
+    #[test]
+    fn test_macros_to_log_backend() {
+        clear_logs();
+
+        error!("log error");
+        warn!("log warn");
+        info!("log info");
+        debug!("log debug");
+        trace!("log trace");
+
+        assert!(logs_contain("log error"));
+        assert!(logs_contain("log warn"));
+        assert!(logs_contain("log info"));
+        assert!(logs_contain("log debug"));
+        assert!(logs_contain("log trace"));
     }
 }
