@@ -5,62 +5,72 @@
 
 #[macro_export]
 macro_rules! error {
-    ($($arg:tt)*) => {
+    ($($arg:tt)*) => {{
+        #[allow(unused_variables)]
+        let args = format_args!($($arg)*);
         #[cfg(feature = "tracing")]
-        tracing::error!($($arg)*);
+        tracing::error!("{}", args);
         #[cfg(feature = "log")]
-        log::error!($($arg)*);
+        log::error!("{}", args);
         #[cfg(feature = "defmt")]
-        defmt::error!("{}", defmt::Display2Format(&format_args!($($arg)*)));
-    };
+        defmt::error!("{}", defmt::Display2Format(&args));
+    }};
 }
 
 #[macro_export]
 macro_rules! warn {
-    ($($arg:tt)*) => {
+    ($($arg:tt)*) => {{
+        #[allow(unused_variables)]
+        let args = format_args!($($arg)*);
         #[cfg(feature = "tracing")]
-        tracing::warn!($($arg)*);
+        tracing::warn!("{}", args);
         #[cfg(feature = "log")]
-        log::warn!($($arg)*);
+        log::warn!("{}", args);
         #[cfg(feature = "defmt")]
-        defmt::warn!("{}", defmt::Display2Format(&format_args!($($arg)*)));
-    };
+        defmt::warn!("{}", defmt::Display2Format(&args));
+    }};
 }
 
 #[macro_export]
 macro_rules! info {
-    ($($arg:tt)*) => {
+    ($($arg:tt)*) => {{
+        #[allow(unused_variables)]
+        let args = format_args!($($arg)*);
         #[cfg(feature = "tracing")]
-        tracing::info!($($arg)*);
+        tracing::info!("{}", args);
         #[cfg(feature = "log")]
-        log::info!($($arg)*);
+        log::info!("{}", args);
         #[cfg(feature = "defmt")]
-        defmt::info!("{}", defmt::Display2Format(&format_args!($($arg)*)));
-    };
+        defmt::info!("{}", defmt::Display2Format(&args));
+    }};
 }
 
 #[macro_export]
 macro_rules! debug {
-    ($($arg:tt)*) => {
+    ($($arg:tt)*) => {{
+        #[allow(unused_variables)]
+        let args = format_args!($($arg)*);
         #[cfg(feature = "tracing")]
-        tracing::debug!($($arg)*);
+        tracing::debug!("{}", args);
         #[cfg(feature = "log")]
-        log::debug!($($arg)*);
+        log::debug!("{}", args);
         #[cfg(feature = "defmt")]
-        defmt::debug!("{}", defmt::Display2Format(&format_args!($($arg)*)));
-    };
+        defmt::debug!("{}", defmt::Display2Format(&args));
+    }};
 }
 
 #[macro_export]
 macro_rules! trace {
-    ($($arg:tt)*) => {
+    ($($arg:tt)*) => {{
+        #[allow(unused_variables)]
+        let args = format_args!($($arg)*);
         #[cfg(feature = "tracing")]
-        tracing::trace!($($arg)*);
+        tracing::trace!("{}", args);
         #[cfg(feature = "log")]
-        log::trace!($($arg)*);
+        log::trace!("{}", args);
         #[cfg(feature = "defmt")]
-        defmt::trace!("{}", defmt::Display2Format(&format_args!($($arg)*)));
-    };
+        defmt::trace!("{}", defmt::Display2Format(&args));
+    }};
 }
 
 use core::fmt::Display;
@@ -70,312 +80,238 @@ mod sealed {
     pub trait Sealed {}
 }
 
-/// For logging a [`Result`] when [`Result::Err`] is encountered.
-pub trait ErrContext<T, E>: sealed::Sealed {
-    /// If [`Result::Err`], logging the display of the [`Result::Err`] as an "error".
-    fn log_error(self) -> Result<T, E>
-    where
-        E: Display;
-    /// If [`Result::Err`], logging the display of the [`Result::Err`] as an "warn".
-    fn log_warn(self) -> Result<T, E>
-    where
-        E: Display;
-    /// If [`Result::Err`], logging the display of the [`Result::Err`] as an "info".
-    fn log_info(self) -> Result<T, E>
-    where
-        E: Display;
-    /// If [`Result::Err`], logging the display of the [`Result::Err`] as an "debug".
-    fn log_debug(self) -> Result<T, E>
-    where
-        E: Display;
-    /// If [`Result::Err`], logging the display of the [`Result::Err`] as an "trace".
-    fn log_trace(self) -> Result<T, E>
-    where
-        E: Display;
 
-    /// If [`Result::Err`], logging context as an "error".
-    fn log_error_msg(self, msg: impl Display) -> Result<T, E>;
-    /// If [`Result::Err`], logging context as a "warn".
-    fn log_warn_msg(self, msg: impl Display) -> Result<T, E>;
-    /// If [`Result::Err`], logging context as an "info".
-    fn log_info_msg(self, msg: impl Display) -> Result<T, E>;
-    /// If [`Result::Err`], logging context as a "debug".
-    fn log_debug_msg(self, msg: impl Display) -> Result<T, E>;
-    /// If [`Result::Err`], logging context as a "trace".
-    fn log_trace_msg(self, msg: impl Display) -> Result<T, E>;
-
-    /// If [`Result::Err`], lazily logging the result of [f] as an "error".
-    fn log_error_with<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Result<T, E>;
-    /// If [`Result::Err`], lazily logging the result of [f] as a "warn".
-    fn log_warn_with<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Result<T, E>;
-    /// If [`Result::Err`], lazily logging the result of [f] as an "info".
-    fn log_info_with<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Result<T, E>;
-    /// If [`Result::Err`], lazily logging the result of [f] as a "debug".
-    fn log_debug_with<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Result<T, E>;
-    /// If [`Result::Err`], lazily logging the result of [f] as a "trace".
-    fn log_trace_with<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Result<T, E>;
+pub trait ErrLog<E> {
+    fn error(self, error: &E);
+    fn warn(self, error: &E);
+    fn info(self, error: &E);
+    fn debug(self, error: &E);
+    fn trace(self, error: &E);
 }
 
-/// For logging a [Option] when [None] is encountered.
-pub trait NoneContext<T>: sealed::Sealed {
-    /// If [None], logging context as an "error".
-    fn log_error_msg(self, context: impl Display) -> Option<T>;
-    /// If [None], logging context as a "warn".
-    fn log_warn_msg(self, context: impl Display) -> Option<T>;
-    /// If [None], logging context as an "info".
-    fn log_info_msg(self, context: impl Display) -> Option<T>;
-    /// If [None], logging context as a "debug".
-    fn log_debug_msg(self, context: impl Display) -> Option<T>;
-    /// If [None], logging context as a "trace".
-    fn log_trace_msg(self, context: impl Display) -> Option<T>;
+impl<'a, E> ErrLog<E> for ()
+where
+    E: Display,
+{
+    #[inline]
+    fn error(self, error: &E) {
+        error!("{}", error)
+    }
+    #[inline]
+    fn warn(self, error: &E) {
+        warn!("{}", error)
+    }
+    #[inline]
+    fn info(self, error: &E) {
+        info!("{}", error)
+    }
+    #[inline]
+    fn debug(self, error: &E) {
+        debug!("{}", error)
+    }
+    #[inline]
+    fn trace(self, error: &E) {
+        trace!("{}", error)
+    }
+}
 
-    /// Consumes the [Option]. If [None], lazily logging the result of [f] as an "error".
-    fn log_error_with<F: FnOnce() -> D, D: Display>(self, f: F) -> Option<T>;
-    /// Consumes the [Option]. If [None], lazily logging the result of [f] as a "warn".
-    fn log_warn_with<F: FnOnce() -> D, D: Display>(self, f: F) -> Option<T>;
-    /// Consumes the [Option]. If [None], lazily logging the result of [f] as an "info".
-    fn log_info_with<F: FnOnce() -> D, D: Display>(self, f: F) -> Option<T>;
-    /// Consumes the [Option]. If [None], lazily logging the result of [f] as a "debug".
-    fn log_debug_with<F: FnOnce() -> D, D: Display>(self, f: F) -> Option<T>;
-    /// Consumes the [Option]. If [None], lazily logging the result of [f] as a "trace".
-    fn log_trace_with<F: FnOnce() -> D, D: Display>(self, f: F) -> Option<T>;
+impl<E> ErrLog<E> for &str {
+    #[inline]
+    fn error(self, error: &E) {
+        error!("{}", self)
+    }
+    #[inline]
+    fn warn(self, error: &E) {
+        warn!("{}", self)
+    }
+    #[inline]
+    fn info(self, error: &E) {
+        info!("{}", self)
+    }
+    #[inline]
+    fn debug(self, error: &E) {
+        debug!("{}", self)
+    }
+    #[inline]
+    fn trace(self, error: &E) {
+        trace!("{}", self)
+    }
+}
+
+impl<F, E, D> ErrLog<E> for F
+where
+    F: FnOnce(&E) -> D,
+    D: Display,
+{
+    #[inline]
+    fn error(self, error: &E) {
+        error!("{}", self(error))
+    }
+    #[inline]
+    fn warn(self, error: &E) {
+        warn!("{}", self(error))
+    }
+    #[inline]
+    fn info(self, error: &E) {
+        info!("{}", self(error))
+    }
+    #[inline]
+    fn debug(self, error: &E) {
+        debug!("{}", self(error))
+    }
+    #[inline]
+    fn trace(self, error: &E) {
+        trace!("{}", self(error))
+    }
+}
+
+pub trait NoneLog {
+    fn error(self);
+    fn warn(self);
+    fn info(self);
+    fn debug(self);
+    fn trace(self);
+}
+
+impl NoneLog for &str {
+    #[inline]
+    fn error(self) {
+        error!("{}", self)
+    }
+    #[inline]
+    fn warn(self) {
+        warn!("{}", self)
+    }
+    #[inline]
+    fn info(self) {
+        info!("{}", self)
+    }
+    #[inline]
+    fn debug(self) {
+        debug!("{}", self)
+    }
+    #[inline]
+    fn trace(self) {
+        trace!("{}", self)
+    }
+}
+
+impl<F, D> NoneLog for F
+where
+    F: FnOnce() -> D,
+    D: Display,
+{
+    #[inline]
+    fn error(self) {
+        error!("{}", self())
+    }
+    #[inline]
+    fn warn(self) {
+        warn!("{}", self())
+    }
+    #[inline]
+    fn info(self) {
+        info!("{}", self())
+    }
+    #[inline]
+    fn debug(self) {
+        debug!("{}", self())
+    }
+    #[inline]
+    fn trace(self) {
+        trace!("{}", self())
+    }
+}
+
+/// For logging a [`Result`] when [`Result::Err`] is encountered.
+pub trait ErrContext<T, E>: sealed::Sealed {
+    /// If [`Result::Err`], logging as "error".
+    fn error(self, input: impl ErrLog<E>) -> Result<T, E>;
+    /// If [`Result::Err`], logging as "warn".
+    fn warn(self, input: impl ErrLog<E>) -> Result<T, E>;
+    /// If [`Result::Err`], logging as "info".
+    fn info(self, input: impl ErrLog<E>) -> Result<T, E>;
+    /// If [`Result::Err`], logging as "debug".
+    fn debug(self, input: impl ErrLog<E>) -> Result<T, E>;
+    /// If [`Result::Err`], logging as "trace".
+    fn trace(self, input: impl ErrLog<E>) -> Result<T, E>;
+}
+
+/// For logging a [`Option`] when [`Option::None`] is encountered.
+pub trait NoneContext<T>: sealed::Sealed {
+    /// If [`Option::None`], logging as "error".
+    fn error(self, input: impl NoneLog) -> Option<T>;
+    /// If [`Option::None`], logging as "warn".
+    fn warn(self, input: impl NoneLog) -> Option<T>;
+    /// If [`Option::None`], logging as "info".
+    fn info(self, input: impl NoneLog) -> Option<T>;
+    /// If [`Option::None`], logging as "debug".
+    fn debug(self, input: impl NoneLog) -> Option<T>;
+    /// If [`Option::None`], logging as "trace".
+    fn trace(self, input: impl NoneLog) -> Option<T>;
 }
 
 impl<T, E> sealed::Sealed for Result<T, E> {}
 
 impl<T, E> ErrContext<T, E> for Result<T, E> {
     #[inline]
-    fn log_error(self) -> Result<T, E>
-    where
-        E: Display,
-    {
+    fn error(self, input: impl ErrLog<E>) -> Result<T, E> {
         match self {
             Ok(value) => Ok(value),
             Err(err) => {
-                #[cfg(feature = "tracing")]
-                tracing::error!("{}", err);
-                #[cfg(feature = "log")]
-                log::error!("{}", err);
-                #[cfg(feature = "defmt")]
-                defmt::error!("{}", defmt::Display2Format(&err));
+                #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
+                input.error(&err);
                 Err(err)
             }
         }
     }
 
     #[inline]
-    fn log_warn(self) -> Result<T, E>
-    where
-        E: Display,
-    {
+    fn warn(self, input: impl ErrLog<E>) -> Result<T, E> {
         match self {
             Ok(value) => Ok(value),
             Err(err) => {
-                #[cfg(feature = "tracing")]
-                tracing::warn!("{}", err);
-                #[cfg(feature = "log")]
-                log::warn!("{}", err);
-                #[cfg(feature = "defmt")]
-                defmt::warn!("{}", defmt::Display2Format(&err));
+                #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
+                input.warn(&err);
                 Err(err)
             }
         }
     }
 
     #[inline]
-    fn log_info(self) -> Result<T, E>
-    where
-        E: Display,
-    {
+    fn info(self, input: impl ErrLog<E>) -> Result<T, E> {
         match self {
             Ok(value) => Ok(value),
             Err(err) => {
-                #[cfg(feature = "tracing")]
-                tracing::info!("{}", err);
-                #[cfg(feature = "log")]
-                log::info!("{}", err);
-                #[cfg(feature = "defmt")]
-                defmt::info!("{}", defmt::Display2Format(&err));
+                #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
+                input.info(&err);
                 Err(err)
             }
         }
     }
 
     #[inline]
-    fn log_debug(self) -> Result<T,E>
-    where
-        E: Display,
-    {
+    fn debug(self, input: impl ErrLog<E>) -> Result<T, E> {
         match self {
             Ok(value) => Ok(value),
             Err(err) => {
-                #[cfg(feature = "tracing")]
-                tracing::debug!("{}", err);
-                #[cfg(feature = "log")]
-                log::debug!("{}", err);
-                #[cfg(feature = "defmt")]
-                defmt::debug!("{}", defmt::Display2Format(&err));
+                #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
+                input.debug(&err);
                 Err(err)
             }
         }
     }
 
     #[inline]
-    fn log_trace(self) -> Result<T, E>
-    where
-        E: Display,
-    {
+    fn trace(self, input: impl ErrLog<E>) -> Result<T, E> {
         match self {
             Ok(value) => Ok(value),
             Err(err) => {
-                #[cfg(feature = "tracing")]
-                tracing::trace!("{}", err);
-                #[cfg(feature = "log")]
-                log::trace!("{}", err);
-                #[cfg(feature = "defmt")]
-                defmt::trace!("{}", defmt::Display2Format(&err));
+                #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
+                input.trace(&err);
                 Err(err)
             }
         }
-    }
-    #[inline]
-    fn log_error_msg(self, context: impl Display) -> Result<T, E> {
-        if self.is_err() {
-            #[cfg(feature = "tracing")]
-            tracing::error!("{}", context);
-            #[cfg(feature = "log")]
-            log::error!("{}", context);
-            #[cfg(feature = "defmt")]
-            defmt::error!("{}", defmt::Display2Format(&context));
-        }
-        self
-    }
-
-    #[inline]
-    fn log_warn_msg(self, context: impl Display) -> Result<T, E> {
-        if self.is_err() {
-            #[cfg(feature = "tracing")]
-            tracing::warn!("{}", context);
-            #[cfg(feature = "log")]
-            log::warn!("{}", context);
-            #[cfg(feature = "defmt")]
-            defmt::warn!("{}", defmt::Display2Format(&context));
-        }
-        self
-    }
-
-    #[inline]
-    fn log_info_msg(self, context: impl Display) -> Result<T, E> {
-        if self.is_err() {
-            #[cfg(feature = "tracing")]
-            tracing::info!("{}", context);
-            #[cfg(feature = "log")]
-            log::info!("{}", context);
-            #[cfg(feature = "defmt")]
-            defmt::info!("{}", defmt::Display2Format(&context));
-        }
-        self
-    }
-
-    #[inline]
-    fn log_debug_msg(self, context: impl Display) -> Result<T, E> {
-        if self.is_err() {
-            #[cfg(feature = "tracing")]
-            tracing::debug!("{}", context);
-            #[cfg(feature = "log")]
-            log::debug!("{}", context);
-            #[cfg(feature = "defmt")]
-            defmt::debug!("{}", defmt::Display2Format(&context));
-        }
-        self
-    }
-
-    #[inline]
-    fn log_trace_msg(self, context: impl Display) -> Result<T, E> {
-        if self.is_err() {
-            #[cfg(feature = "tracing")]
-            tracing::trace!("{}", context);
-            #[cfg(feature = "log")]
-            log::trace!("{}", context);
-            #[cfg(feature = "defmt")]
-            defmt::trace!("{}", defmt::Display2Format(&context));
-        }
-        self
-    }
-
-    #[inline]
-    fn log_error_with<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Result<T, E> {
-        if let Err(err) = &self {
-            #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
-            let context = f(&err);
-            #[cfg(feature = "tracing")]
-            tracing::error!("{}", context);
-            #[cfg(feature = "log")]
-            log::error!("{}", context);
-            #[cfg(feature = "defmt")]
-            defmt::error!("{}", defmt::Display2Format(&context));
-        }
-        self
-    }
-
-    #[inline]
-    fn log_warn_with<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Result<T, E> {
-        if let Err(err) = &self {
-            #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
-            let context = f(&err);
-            #[cfg(feature = "tracing")]
-            tracing::warn!("{}", context);
-            #[cfg(feature = "log")]
-            log::warn!("{}", context);
-            #[cfg(feature = "defmt")]
-            defmt::warn!("{}", defmt::Display2Format(&context));
-        }
-        self
-    }
-
-    #[inline]
-    fn log_info_with<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Result<T, E> {
-        if let Err(err) = &self {
-            #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
-            let context = f(&err);
-            #[cfg(feature = "tracing")]
-            tracing::info!("{}", context);
-            #[cfg(feature = "log")]
-            log::info!("{}", context);
-            #[cfg(feature = "defmt")]
-            defmt::info!("{}", defmt::Display2Format(&context));
-        }
-        self
-    }
-
-    #[inline]
-    fn log_debug_with<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Result<T, E> {
-        if let Err(err) = &self {
-            #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
-            let context = f(&err);
-            #[cfg(feature = "tracing")]
-            tracing::debug!("{}", context);
-            #[cfg(feature = "log")]
-            log::debug!("{}", context);
-            #[cfg(feature = "defmt")]
-            defmt::debug!("{}", defmt::Display2Format(&context));
-        }
-        self
-    }
-
-    #[inline]
-    fn log_trace_with<F: FnOnce(&E) -> D, D: Display>(self, f: F) -> Result<T, E> {
-        if let Err(err) = &self {
-            #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
-            let context = f(&err);
-            #[cfg(feature = "tracing")]
-            tracing::trace!("{}", context);
-            #[cfg(feature = "log")]
-            log::trace!("{}", context);
-            #[cfg(feature = "defmt")]
-            defmt::trace!("{}", defmt::Display2Format(&context));
-        }
-        self
     }
 }
 
@@ -383,142 +319,62 @@ impl<T> sealed::Sealed for Option<T> {}
 
 impl<T> NoneContext<T> for Option<T> {
     #[inline]
-    fn log_error_msg(self, context: impl Display) -> Option<T> {
-        if self.is_none() {
-            #[cfg(feature = "tracing")]
-            tracing::error!("{}", context);
-            #[cfg(feature = "log")]
-            log::error!("{}", context);
-            #[cfg(feature = "defmt")]
-            defmt::error!("{}", defmt::Display2Format(&context));
+    fn error(self, input: impl NoneLog) -> Option<T> {
+        match self {
+            Some(value) => Some(value),
+            None => {
+                #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
+                input.error();
+                None
+            }
         }
-        self
     }
 
     #[inline]
-    fn log_warn_msg(self, context: impl Display) -> Option<T> {
-        if self.is_none() {
-            #[cfg(feature = "tracing")]
-            tracing::warn!("{}", context);
-            #[cfg(feature = "log")]
-            log::warn!("{}", context);
-            #[cfg(feature = "defmt")]
-            defmt::warn!("{}", defmt::Display2Format(&context));
+    fn warn(self, input: impl NoneLog) -> Option<T> {
+        match self {
+            Some(value) => Some(value),
+            None => {
+                #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
+                input.warn();
+                None
+            }
         }
-        self
     }
 
     #[inline]
-    fn log_info_msg(self, context: impl Display) -> Option<T> {
-        if self.is_none() {
-            #[cfg(feature = "tracing")]
-            tracing::info!("{}", context);
-            #[cfg(feature = "log")]
-            log::info!("{}", context);
-            #[cfg(feature = "defmt")]
-            defmt::info!("{}", defmt::Display2Format(&context));
+    fn info(self, input: impl NoneLog) -> Option<T> {
+        match self {
+            Some(value) => Some(value),
+            None => {
+                #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
+                input.info();
+                None
+            }
         }
-        self
     }
 
     #[inline]
-    fn log_debug_msg(self, context: impl Display) -> Option<T> {
-        if self.is_none() {
-            #[cfg(feature = "tracing")]
-            tracing::debug!("{}", context);
-            #[cfg(feature = "log")]
-            log::debug!("{}", context);
-            #[cfg(feature = "defmt")]
-            defmt::debug!("{}", defmt::Display2Format(&context));
+    fn debug(self, input: impl NoneLog) -> Option<T> {
+        match self {
+            Some(value) => Some(value),
+            None => {
+                #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
+                input.debug();
+                None
+            }
         }
-        self
     }
 
     #[inline]
-    fn log_trace_msg(self, context: impl Display) -> Option<T> {
-        if self.is_none() {
-            #[cfg(feature = "tracing")]
-            tracing::trace!("{}", context);
-            #[cfg(feature = "log")]
-            log::trace!("{}", context);
-            #[cfg(feature = "defmt")]
-            defmt::trace!("{}", defmt::Display2Format(&context));
+    fn trace(self, input: impl NoneLog) -> Option<T> {
+        match self {
+            Some(value) => Some(value),
+            None => {
+                #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
+                input.trace();
+                None
+            }
         }
-        self
-    }
-
-    #[inline]
-    fn log_error_with<F: FnOnce() -> D, D: Display>(self, f: F) -> Option<T> {
-        if self.is_none() {
-            #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
-            let context = f();
-            #[cfg(feature = "tracing")]
-            tracing::error!("{}", context);
-            #[cfg(feature = "log")]
-            log::error!("{}", context);
-            #[cfg(feature = "defmt")]
-            defmt::error!("{}", defmt::Display2Format(&context));
-        }
-        self
-    }
-
-    #[inline]
-    fn log_warn_with<F: FnOnce() -> D, D: Display>(self, f: F) -> Option<T> {
-        if self.is_none() {
-            #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
-            let context = f();
-            #[cfg(feature = "tracing")]
-            tracing::warn!("{}", context);
-            #[cfg(feature = "log")]
-            log::warn!("{}", context);
-            #[cfg(feature = "defmt")]
-            defmt::warn!("{}", defmt::Display2Format(&context));
-        }
-        self
-    }
-
-    #[inline]
-    fn log_info_with<F: FnOnce() -> D, D: Display>(self, f: F) -> Option<T> {
-        if self.is_none() {
-            #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
-            let context = f();
-            #[cfg(feature = "tracing")]
-            tracing::info!("{}", context);
-            #[cfg(feature = "log")]
-            log::info!("{}", context);
-            #[cfg(feature = "defmt")]
-            defmt::info!("{}", defmt::Display2Format(&context));
-        }
-        self
-    }
-
-    #[inline]
-    fn log_debug_with<F: FnOnce() -> D, D: Display>(self, f: F) -> Option<T> {
-        if self.is_none() {
-            #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
-            let context = f();
-            #[cfg(feature = "tracing")]
-            tracing::debug!("{}", context);
-            #[cfg(feature = "log")]
-            log::debug!("{}", context);
-            #[cfg(feature = "defmt")]
-            defmt::debug!("{}", defmt::Display2Format(&context));
-        }
-        self
-    }
-
-    #[inline]
-    fn log_trace_with<F: FnOnce() -> D, D: Display>(self, f: F) -> Option<T> {
-        if self.is_none() {
-            #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
-            let context = f();
-            #[cfg(feature = "tracing")]
-            tracing::trace!("{}", context);
-            #[cfg(feature = "log")]
-            log::trace!("{}", context);
-            #[cfg(feature = "defmt")]
-            defmt::trace!("{}", defmt::Display2Format(&context));
-        }
-        self
     }
 }
