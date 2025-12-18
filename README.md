@@ -49,7 +49,7 @@ use err_trail::ErrContext;
 fn main() {
     let value: Result<(), String> = result().error("If `Err`, this message is logged as error");
     let value: Result<(), String> = result().warn("If `Err`, this message is logged as warn");
-    // Notice these methods can also accept closures for lazy eval
+    // Notice these methods can also accept closures for lazy evaluation
     let value: Result<(), String> = result().error(|err: &String| format!("If `Err`, this message is logged as error: {}", err));
     // If the error type implements `Display` then `()` can be passed to log the error directly if `Err`
     let value: Result<(), String> = result().error(());
