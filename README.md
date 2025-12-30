@@ -106,10 +106,11 @@ flowchart TD
     Trace["Trace<br/><br/>• Often verbose (e.g. large variable states or hit frequently)<br/>• Usually noise during most debug sessions"]
     Debug[Debug]
     Info["Info<br/><br/>• For System Operators<br/>• Human readable<br/>• Usually actionable (e.g. alerts, incidents, performance, health, stability)"]
-    Warning["Warning<br/><br/>• Unwanted state/error encountered, but continuing the operation.<br/>• This is the last handler in an error chain and decided to continue the operation despite the error.<br/>• Note: Returning the error to the calling is <b>not</b> considered a warning or an error - if anything, a trace."]
+    Warning["Warning<br/><br/>• Unwanted state/error encountered, but continuing the operation.<br/>• This is the last handler in an error chain and decided to continue the operation despite the error."]
     Error["Error<br/><br/>• Operation had to be aborted.<br/>• This is the last handler in an error chain and decided to abort the operation because of the error."]
     Fatal[Fatal<br/><br/>• Panic or abort]
 ```
+> Note: Returning the error to the calling is **not** considered a warning or an error - if anything, a trace.
 
 ## no_std
 
