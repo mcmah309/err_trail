@@ -2,7 +2,7 @@
 name = "err_trail"
 description = "Add context to errors through logging"
 categories = ["rust-patterns", "no-std"]
-version = "0.11.0-rc.0"
+version = "0.11.0"
 edition = "2024"
 license = "Apache-2.0"
 documentation = "https://docs.rs/err_trail"
