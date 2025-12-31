@@ -67,7 +67,7 @@ Opinionated guide on how to log if you are new to logging or would like a refres
 
 ```mermaid
 flowchart TD
-    Start{Is this log for debugging?}
+    Start{Is this log specifically for debugging?}
 
     Start -->|Yes| SessionType
     Start -->|No| UnwantedState
