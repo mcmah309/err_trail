@@ -57,7 +57,7 @@ dependencies = [
 
 [[package]]
 name = "err_trail"
-version = "0.11.0"
+version = "0.11.1"
 dependencies = [
  "defmt",
  "err_trail_macros",
@@ -70,7 +70,7 @@ dependencies = [
 
 [[package]]
 name = "err_trail_macros"
-version = "0.11.0"
+version = "0.11.1"
 dependencies = [
  "proc-macro2",
  "quote",

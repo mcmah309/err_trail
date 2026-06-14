@@ -1,7 +1,11 @@
 [package]
 name = "err_trail_macros"
-version = "0.11.0"
+description = "Macros for the err_trail crate"
+version = "0.11.1"
 edition = "2024"
+license = "Apache-2.0"
+documentation = "https://docs.rs/err_trail"
+repository = "https://github.com/mcmah309/err_trail"
 
 [lib]
 proc-macro = true
