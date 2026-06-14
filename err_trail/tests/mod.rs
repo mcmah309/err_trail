@@ -1,6 +1,6 @@
 #[cfg(feature = "tracing")]
 #[cfg(test)]
-mod tracing {
+mod tracing_tests {
     use err_trail::{ErrContext, NoneContext, debug, error, info, trace, warn};
     use flaky_test::flaky_test;
     use tracing_test::traced_test;

@@ -1,5 +1,5 @@
 [workspace]
 resolver = "3"
-members = ["err_trail"]
+members = ["err_trail", "err_trail_macros"]
 
 exclude = ["test_no_std"]

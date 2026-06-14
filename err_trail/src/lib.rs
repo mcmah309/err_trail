@@ -3,76 +3,6 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc = include_str!("../README.md")]
 
-#[macro_export]
-macro_rules! error {
-    ($($arg:tt)*) => {{
-        #[allow(unused_variables)]
-        let args = format_args!($($arg)*);
-        #[cfg(feature = "tracing")]
-        tracing::error!("{}", args);
-        #[cfg(feature = "log")]
-        log::error!("{}", args);
-        #[cfg(feature = "defmt")]
-        defmt::error!("{}", defmt::Display2Format(&args));
-    }};
-}
-
-#[macro_export]
-macro_rules! warn {
-    ($($arg:tt)*) => {{
-        #[allow(unused_variables)]
-        let args = format_args!($($arg)*);
-        #[cfg(feature = "tracing")]
-        tracing::warn!("{}", args);
-        #[cfg(feature = "log")]
-        log::warn!("{}", args);
-        #[cfg(feature = "defmt")]
-        defmt::warn!("{}", defmt::Display2Format(&args));
-    }};
-}
-
-#[macro_export]
-macro_rules! info {
-    ($($arg:tt)*) => {{
-        #[allow(unused_variables)]
-        let args = format_args!($($arg)*);
-        #[cfg(feature = "tracing")]
-        tracing::info!("{}", args);
-        #[cfg(feature = "log")]
-        log::info!("{}", args);
-        #[cfg(feature = "defmt")]
-        defmt::info!("{}", defmt::Display2Format(&args));
-    }};
-}
-
-#[macro_export]
-macro_rules! debug {
-    ($($arg:tt)*) => {{
-        #[allow(unused_variables)]
-        let args = format_args!($($arg)*);
-        #[cfg(feature = "tracing")]
-        tracing::debug!("{}", args);
-        #[cfg(feature = "log")]
-        log::debug!("{}", args);
-        #[cfg(feature = "defmt")]
-        defmt::debug!("{}", defmt::Display2Format(&args));
-    }};
-}
-
-#[macro_export]
-macro_rules! trace {
-    ($($arg:tt)*) => {{
-        #[allow(unused_variables)]
-        let args = format_args!($($arg)*);
-        #[cfg(feature = "tracing")]
-        tracing::trace!("{}", args);
-        #[cfg(feature = "log")]
-        log::trace!("{}", args);
-        #[cfg(feature = "defmt")]
-        defmt::trace!("{}", defmt::Display2Format(&args));
-    }};
-}
-
 use core::fmt::Display;
 
 mod sealed {
@@ -80,6 +10,7 @@ mod sealed {
     pub trait Sealed {}
 }
 
+pub use err_trail_macros::{debug, error, info, trace, warn};
 
 pub trait ErrLog<E> {
     fn error(self, error: &E);

@@ -9,6 +9,7 @@ documentation = "https://docs.rs/err_trail"
 repository = "https://github.com/mcmah309/err_trail"
 
 [dependencies]
+err_trail_macros = { version = "0.11.0", path = "../err_trail_macros" }
 tracing = { version = "0.1", default-features = false, optional = true }
 log = { version = "0.4", default-features = false, optional = true }
 defmt = { version = "1", default-features = false, optional = true }
@@ -21,6 +22,9 @@ flaky_test = "0.2"
 
 [features]
 default = []
+tracing = ["dep:tracing", "err_trail_macros/tracing"]
+log = ["dep:log", "err_trail_macros/log"]
+defmt = ["dep:defmt", "err_trail_macros/defmt"]
 
 [package.metadata.docs.rs]
 all-features = true
