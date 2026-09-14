@@ -59,7 +59,7 @@ pub trait ErrLog<E> {
     fn trace(self, error: &E);
 }
 
-impl<'a, E> ErrLog<E> for ()
+impl<E> ErrLog<E> for ()
 where
     E: Display,
 {
@@ -290,61 +290,46 @@ impl<T> sealed::Sealed for Option<T> {}
 impl<T> NoneContext<T> for Option<T> {
     #[inline]
     fn error(self, input: impl NoneLog) -> Option<T> {
-        match self {
-            Some(value) => Some(value),
-            None => {
-                #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
-                input.error();
-                None
-            }
+        #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
+        if self.is_none() {
+            input.error();
         }
+        self
     }
 
     #[inline]
     fn warn(self, input: impl NoneLog) -> Option<T> {
-        match self {
-            Some(value) => Some(value),
-            None => {
-                #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
-                input.warn();
-                None
-            }
+        #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
+        if self.is_none() {
+            input.warn();
         }
+        self
     }
 
     #[inline]
     fn info(self, input: impl NoneLog) -> Option<T> {
-        match self {
-            Some(value) => Some(value),
-            None => {
-                #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
-                input.info();
-                None
-            }
+        #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
+        if self.is_none() {
+            input.info();
         }
+        self
     }
 
     #[inline]
     fn debug(self, input: impl NoneLog) -> Option<T> {
-        match self {
-            Some(value) => Some(value),
-            None => {
-                #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
-                input.debug();
-                None
-            }
+        #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
+        if self.is_none() {
+            input.debug();
         }
+        self
     }
 
     #[inline]
     fn trace(self, input: impl NoneLog) -> Option<T> {
-        match self {
-            Some(value) => Some(value),
-            None => {
-                #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
-                input.trace();
-                None
-            }
+        #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
+        if self.is_none() {
+            input.trace();
         }
+        self
     }
 }
