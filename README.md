@@ -74,51 +74,11 @@ The same methods exist for `Option` too.
 The macro syntax matches `tracing` and works unchanged
 with `log` and `defmt`. Wherever `err_trail` chooses a text format, we aim to
 follow [`tracing-subscriber`'s default `Full` formatter](https://docs.rs/tracing-subscriber/latest/tracing_subscriber/fmt/format/struct.Full.html)
-without terminal styling: a message followed by space-separated `name=value`
-fields, and `target: ` when the target is included in the text.
+without terminal styling. See [Backend formatting](#backend-formatting) for
+output differences and configuration options.
 
-The backends differ in which parts remain configurable:
-
-| Part of the output | `tracing` | `log` | `defmt` |
-| --- | --- | --- | --- |
-| Message and field layout: `warn!(attempts = 3, "Retrying")` | Structured fields; the subscriber controls their layout. | Fixed by `err_trail`: message first, then fields in input order. | Same fixed layout as `log`. |
-| Field labels, quoting, and separators: `warn!(reason = %error, attempts = 3)` or `warn!(reason = ?error)` | The subscriber controls their rendering. | Fixed by `err_trail` to follow the default tracing field style. | Same fixed rendering as `log`. |
-| Target display: `warn!(target: "network", "Retrying")` | Metadata; the subscriber can change its style or hide it. | Metadata; the logger can change its style or hide it. | Fixed `target: ` prefix only for explicit targets; otherwise no added prefix. |
-| Timestamps, levels, colors, and source locations: `warn!("Retrying")` selects the level; other metadata needs no macro arguments. | Configured in the subscriber. | Configured in the logger. | Configured in the host-side printer. |
-| Span context: `let _span = tracing::info_span!("request", id = 42).entered();` (outside the logging macro) | Handled by the subscriber; the default formatter shows active spans. | No span context added by `err_trail`. | No span context added by `err_trail`. |
-
-`log` and `defmt` receive fields as message text, so their output configuration
-cannot independently rearrange or restyle those fields. `err_trail` exposes no
-formatting configuration of its own. The examples below show the message and
-fields only, omitting targets, timestamps, levels, colors, and span context
-unless stated otherwise.
-
-Some values still print differently across backends. Tracing receives the
-value as a typed field and can handle its type specially; `log`/`defmt` receive
-the text produced by Rust's `Debug` formatting. For example:
-
-| Input (using `err_trail` macros) | Default tracing message and fields | `log`/`defmt` message |
-| --- | --- | --- |
-| `warn!(attempts = Some(3), "Retrying")` | `Retrying attempts=3` | `Retrying attempts=Some(3)` |
-| `warn!(attempts = None::<u32>, "Retrying")` | `Retrying` | `Retrying attempts=None` |
-| `warn!(bytes = &[0u8, 1, 255][..])` | `bytes=[00 01 ff]` | `bytes=[0, 1, 255]` |
-| `warn!(message = "Retrying")` | `Retrying` | `message="Retrying"` |
-
-Adding `?` explicitly selects Rust's `Debug` representation of the value on
-every backend:
-
-```rust
-let attempts = Some(3);
-err_trail::warn!(?attempts, "Retrying");
-// Default tracing and log / defmt message: Retrying attempts=Some(3)
-```
-
-`%` similarly selects `Display` for values that implement it. These modifiers
-control the value's representation; they do not override a tracing subscriber's
-layout or its special treatment of field names such as `message`. For ordinary
-message text, use `warn!("Retrying")` rather than `warn!(message = "Retrying")`.
-Tracing can also include an error's source chain when it receives an error
-object; the `log`/`defmt` fallback uses its Rust formatting instead.
+The examples below show the message and fields only, omitting targets,
+timestamps, levels, colors, and span context unless stated otherwise.
 
 Use `{}` to include a value in the message:
 
@@ -214,10 +174,10 @@ err_trail::warn!({ attempts = 3, ready = false, }, "Retrying");
 // Both calls: Retrying attempts=3 ready=false
 ```
 
-Put `target:` first, followed by a string literal or constant string expression.
-For `tracing`/`log`, it sets the filtering target; its display is configurable.
-For `defmt`, it adds a fixed `target: ` prefix and does not affect filtering.
-Omitting it adds no prefix to the `log`/`defmt` message.
+To categorize logs, start the call with `target: "network"` or use a constant
+string expression. `tracing`/`log` use it for filtering, with configurable
+display. `defmt` adds a fixed `network: ` prefix without affecting filtering.
+Without `target:`, no prefix is added to the `log`/`defmt` message.
 
 ```rust
 err_trail::warn!("Retrying");
@@ -235,7 +195,7 @@ err_trail::warn!(target: TARGET, attempts = 3, "Retrying");
 // Same target and message as above.
 ```
 
-Explicit parent spans (`parent:`), event names (`name:`), and field labels
+`tracing` specific parent spans (`parent:`), event names (`name:`), and field labels
 taken from constants (`{ KEY } = value`) are not supported. Write field labels
 directly, e.g. `request_id = value`. On every backend, `target:` must be a
 compile-time string, not a value calculated at runtime.
@@ -261,6 +221,51 @@ err_trail::debug!("{}", build_report());
 ```
 
 If no backend feature is selected, `build_report()` is not called.
+
+## Backend formatting
+
+Our default text style is a message followed by space-separated `name=value`
+fields, and `target: ` when the target is included in the text.
+
+The backends differ in which parts remain configurable:
+
+| Part of the output | `tracing` | `log` | `defmt` |
+| --- | --- | --- | --- |
+| Message and field layout: `warn!(attempts = 3, "Retrying")` | Structured fields; the subscriber controls their layout. | Fixed by `err_trail`: message first, then fields in input order. | Same fixed layout as `log`. |
+| Field labels, quoting, and separators: `warn!(reason = %error, attempts = 3)` or `warn!(reason = ?error)` | The subscriber controls their rendering. | Fixed by `err_trail` to follow the default tracing field style. | Same fixed rendering as `log`. |
+| Target display: `warn!(target: "network", "Retrying")` | Metadata; the subscriber can change its style or hide it. | Metadata; the logger can change its style or hide it. | Fixed `target: ` prefix only for explicit targets; otherwise no added prefix. |
+| Timestamps, levels, colors, and source locations: `warn!("Retrying")` selects the level; other metadata needs no macro arguments. | Configured in the subscriber. | Configured in the logger. | Configured in the host-side printer. |
+
+`log` and `defmt` receive fields as message text, so their output configuration
+cannot independently rearrange or restyle those fields. `err_trail` exposes no
+formatting configuration of its own.
+
+Some values still print differently across backends. Tracing receives the
+value as a typed field and can handle its type specially; `log`/`defmt` receive
+the text produced by Rust's `Debug` formatting. For example:
+
+| Input (using `err_trail` macros) | Default tracing message and fields | `log`/`defmt` message |
+| --- | --- | --- |
+| `warn!(attempts = Some(3), "Retrying")` | `Retrying attempts=3` | `Retrying attempts=Some(3)` |
+| `warn!(attempts = None::<u32>, "Retrying")` | `Retrying` | `Retrying attempts=None` |
+| `warn!(bytes = &[0u8, 1, 255][..])` | `bytes=[00 01 ff]` | `bytes=[0, 1, 255]` |
+| `warn!(message = "Retrying")` | `Retrying` | `message="Retrying"` |
+
+Adding `?` explicitly selects Rust's `Debug` representation of the value on
+every backend:
+
+```rust
+let attempts = Some(3);
+err_trail::warn!(?attempts, "Retrying");
+// Default tracing and log / defmt message: Retrying attempts=Some(3)
+```
+
+`%` similarly selects `Display` for values that implement it. These modifiers
+control the value's representation; they do not override a tracing subscriber's
+layout or its special treatment of field names such as `message`. For ordinary
+message text, use `warn!("Retrying")` rather than `warn!(message = "Retrying")`.
+Tracing can also include an error's source chain when it receives an error
+object; the `log`/`defmt` fallback uses its Rust formatting instead.
 
 ## Guide
 
