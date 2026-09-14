@@ -53,8 +53,8 @@ use err_trail::ErrContext;
 fn main() {
     let value: Result<(), String> = result().error("If `Err`, this message is logged as error");
     let value: Result<(), String> = result().warn("If `Err`, this message is logged as warn");
-    // Notice these methods can also accept closures for lazy evaluation
-    let value: Result<(), String> = result().error(|err: &String| format!("If `Err`, this message is logged as error: {}", err));
+    // Closures provide lazy evaluation; use `|err: &_|` to infer the error type
+    let value: Result<(), String> = result().error(|err: &_| format!("If `Err`, this message is logged as error: {}", err));
     // If the error type implements `Display` then `()` can be passed to log the error directly if `Err`
     let value: Result<(), String> = result().error(());
 }
@@ -63,7 +63,11 @@ fn result() -> Result<(), String> { Ok(()) }
 
 The same methods exist for `Option` too.
 
-> Note: Due to some limitations of Rust's type inferencing on closures, for closures, usually the input type needs to be specified - e.g. `: &String`.
+> Tip: Use `|err: &_|` for `Result` closures, as shown above. The `_` lets Rust
+> infer the error type when formatting it. If you access fields or call methods
+> such as `err.len()`, you may need the concrete type, e.g. `|err: &String|`, due
+> to a [Rust closure inference limitation](https://github.com/rust-lang/rust/issues/41078).
+> `Option` closures take no arguments (`|| ...`) and need no annotation.
 
 ## Macro format
 
