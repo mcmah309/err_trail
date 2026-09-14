@@ -1,0 +1,23 @@
+error: unsupported logging metadata; only target: is supported
+ --> tests/ui/metadata.rs:2:22
+  |
+2 |     err_trail::info!(parent: None, "unsupported");
+  |                      ^^^^^^
+
+error: unsupported logging metadata; only target: is supported
+ --> tests/ui/metadata.rs:3:22
+  |
+3 |     err_trail::warn!(name: "event", "unsupported");
+  |                      ^^^^
+
+error: target: must appear once, before the fields and message
+ --> tests/ui/metadata.rs:4:40
+  |
+4 |     err_trail::error!(target: "first", target: "second", "duplicate");
+  |                                        ^^^^^^
+
+error: target: must appear once, before the fields and message
+ --> tests/ui/metadata.rs:5:34
+  |
+5 |     err_trail::debug!(value = 1, target: "late", "misplaced");
+  |                                  ^^^^^^

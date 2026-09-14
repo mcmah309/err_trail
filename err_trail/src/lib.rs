@@ -10,7 +10,46 @@ mod sealed {
     pub trait Sealed {}
 }
 
-pub use err_trail_macros::{debug, error, info, trace, warn};
+#[doc(hidden)]
+pub mod __private {
+    #[cfg(feature = "defmt")]
+    pub use defmt;
+    pub use err_trail_macros::{debug, error, info, trace, warn};
+    #[cfg(feature = "log")]
+    pub use log;
+    #[cfg(feature = "tracing")]
+    pub use tracing;
+}
+
+/// Log an error. Supports format strings and tracing-style fields; see the crate documentation.
+#[macro_export]
+macro_rules! error {
+    ($($args:tt)*) => { $crate::__private::error!(@[$crate] $($args)*) };
+}
+
+/// Log a warning. Supports format strings and tracing-style fields; see the crate documentation.
+#[macro_export]
+macro_rules! warn {
+    ($($args:tt)*) => { $crate::__private::warn!(@[$crate] $($args)*) };
+}
+
+/// Log information. Supports format strings and tracing-style fields; see the crate documentation.
+#[macro_export]
+macro_rules! info {
+    ($($args:tt)*) => { $crate::__private::info!(@[$crate] $($args)*) };
+}
+
+/// Log debugging information. Supports format strings and tracing-style fields; see the crate documentation.
+#[macro_export]
+macro_rules! debug {
+    ($($args:tt)*) => { $crate::__private::debug!(@[$crate] $($args)*) };
+}
+
+/// Log trace information. Supports format strings and tracing-style fields; see the crate documentation.
+#[macro_export]
+macro_rules! trace {
+    ($($args:tt)*) => { $crate::__private::trace!(@[$crate] $($args)*) };
+}
 
 pub trait ErrLog<E> {
     fn error(self, error: &E);

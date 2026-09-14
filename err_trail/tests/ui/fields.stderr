@@ -1,0 +1,33 @@
+error: unexpected end of input, expected an expression
+ --> tests/ui/fields.rs:2:5
+  |
+2 |     err_trail::info!(value = ?);
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: this error originates in the macro `$crate::__private::info` which comes from the expansion of the macro `err_trail::info` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: expected `,`
+ --> tests/ui/fields.rs:3:32
+  |
+3 |     err_trail::info!(value = 1 other = 2);
+  |                                ^^^^^
+
+error: expected ',' after field; use field = %expression or field = ?expression for computed values
+ --> tests/ui/fields.rs:4:30
+  |
+4 |     err_trail::info!(%compute());
+  |                              ^
+
+error: unexpected end of input, expected '=' after a quoted field name
+ --> tests/ui/fields.rs:5:33
+  |
+5 |     err_trail::info!({ "quoted" });
+  |                                 ^
+
+error: unexpected end of input, expected at least one field or a format string
+ --> tests/ui/fields.rs:6:5
+  |
+6 |     err_trail::info!();
+  |     ^^^^^^^^^^^^^^^^^^
+  |
+  = note: this error originates in the macro `$crate::__private::info` which comes from the expansion of the macro `err_trail::info` (in Nightly builds, run with -Z macro-backtrace for more info)

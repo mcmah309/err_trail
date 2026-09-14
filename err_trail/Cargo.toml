@@ -15,6 +15,9 @@ log = { version = "0.4", default-features = false, optional = true }
 defmt = { version = "1", default-features = false, optional = true }
 
 [dev-dependencies]
+defmt = { version = "1", features = ["unstable-test"] }
+log = { version = "0.4", features = ["std"] }
+trybuild = "1"
 tracing = { version = "0.1" }
 tracing-test = { version = "0.2", features = ["no-env-filter"] }
 lazy_static = "1"

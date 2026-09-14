@@ -3,9 +3,19 @@ name = "test_no_std"
 edition = "2024"
 
 [dependencies]
-err_trail = { path = "../err_trail" }
+# A renamed dependency also checks that macro expansions do not require the
+# original crate name or direct dependencies on the logging backends.
+trail = { package = "err_trail", path = "../err_trail" }
 heapless = "0.8"
 exit-no-std = "0.2.1"
+
+[features]
+tracing = ["trail/tracing"]
+log = ["trail/log"]
+defmt = ["trail/defmt"]
+
+[lib]
+path = "lib.rs"
 
 [[bin]]
 name = "test_no_std"

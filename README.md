@@ -25,7 +25,9 @@ All methods and macros work with the generic backends. Like previously mentioned
 
 ### Macros
 
-Familiar `error!`, `warn!`, `info!`, `debug!`, `trace!` macros exist to log in a way similar to the built in rust `format!` macro.
+The `error!`, `warn!`, `info!`, `debug!`, and `trace!` macros use **tracing's
+message and field syntax**, including `%` and `?`, across the `tracing`, `log`,
+and `defmt` backends.
 
 ```rust
 use err_trail::{error, warn, info, debug, trace};
@@ -38,6 +40,8 @@ fn main() {
     trace!("Trace log: {}", "function entered");
 }
 ```
+
+See [Macro format](#macro-format) for examples and supported syntax.
 
 ### New Result and Option methods
 
@@ -60,6 +64,129 @@ fn result() -> Result<(), String> { Ok(()) }
 The same methods exist for `Option` too.
 
 > Note: Due to some limitations of Rust's type inferencing on closures, for closures, usually the input type needs to be specified - e.g. `: &String`.
+
+## Macro format
+
+The syntax in these examples matches `tracing` exactly and works unchanged
+with `log` and `defmt`.
+
+Use `{}` to include a value in the message:
+
+```rust
+let attempts = 3;
+err_trail::info!("Retrying after {} attempts", attempts);
+// Retrying after 3 attempts
+```
+
+To attach a named value, put `name = value` before the message. If the field
+and variable have the same name, you can write just the variable. You can also
+leave out the message:
+
+```rust
+let attempts = 3u64;
+
+err_trail::warn!(attempts = attempts, "Retrying");
+err_trail::warn!(attempts, "Retrying");
+// Both calls: Retrying attempts=3
+
+err_trail::info!(attempts);
+// attempts=3
+```
+
+Numbers, booleans, and strings can be used directly. Use `%` to format a value
+with `Display`, or `?` to format it with `Debug`. For strings, the visible
+difference is the quotes:
+
+```rust
+let error = "connection reset";
+
+err_trail::warn!(%error, "Retrying");
+// Retrying error=connection reset
+
+err_trail::warn!(?error, "Retrying");
+// Retrying error="connection reset"
+
+err_trail::warn!(reason = %error, "Retrying");
+// Retrying reason=connection reset
+```
+
+Use `?` for collections or custom types that implement `Debug`. Use `%` for
+custom types that implement `Display`, such as an error with a readable
+description:
+
+```rust
+#[derive(Debug)]
+struct Request {
+    id: u64,
+}
+
+let request = Request { id: 42 };
+let delays = [1, 2, 4];
+
+err_trail::debug!(?request, ?delays, "Scheduling retries");
+// Scheduling retries request=Request { id: 42 } delays=[1, 2, 4]
+```
+
+You can log a struct member directly. You can also choose a dotted field label,
+or quote a label that contains punctuation such as a hyphen:
+
+```rust
+struct Request {
+    id: u64,
+}
+let request = Request { id: 42 };
+
+err_trail::info!(request.id, "Received request");
+// Received request request.id=42
+
+err_trail::warn!(http.status = 503u64, "Request failed");
+// Request failed http.status=503
+// Here, http.status is a label; no variable named http is needed.
+
+err_trail::info!("request-id" = request.id, "Received request");
+// Received request request-id=42
+```
+
+Braces can group the fields before the message. They are optional, and trailing
+commas are allowed:
+
+```rust
+err_trail::warn!(attempts = 3, ready = false, "Retrying");
+err_trail::warn!({ attempts = 3, ready = false, }, "Retrying");
+// Both calls: Retrying attempts=3 ready=false
+```
+
+To choose a logging target, put `target:` first. Supply a string literal or a
+constant string expression. `tracing` and `log` use this target for filtering;
+`defmt` shows it as a prefix:
+
+```rust
+err_trail::warn!(target: "network", attempts = 3, "Retrying");
+// log / tracing: Retrying attempts=3 (target: network)
+// defmt:         [network] Retrying attempts=3
+
+const TARGET: &str = "network";
+err_trail::warn!(target: TARGET, attempts = 3, "Retrying");
+// Same target and message as above.
+```
+
+`parent:`, `name:`, and constant-expression field names (`{ KEY } = value`)
+are not supported.
+
+With a backend enabled, functions used in log arguments run even when their
+messages are filtered out. In this code, `build_report()` prints
+`Building report` even if debug messages are hidden:
+
+```rust
+fn build_report() -> &'static str {
+    println!("Building report");
+    "report contents"
+}
+
+err_trail::debug!("{}", build_report());
+```
+
+If no backend feature is selected, `build_report()` is not called.
 
 ## Guide
 

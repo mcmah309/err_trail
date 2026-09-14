@@ -1,36 +1,121 @@
 extern crate proc_macro;
 use proc_macro::TokenStream;
+use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::quote;
 
+mod input;
+use input::{Format, Input};
+
 fn generate_logger_impl(level: &str, args: TokenStream) -> TokenStream {
-    let args_tokens = proc_macro2::TokenStream::from(args);
-    let level_ident = syn::Ident::new(level, proc_macro2::Span::call_site());
+    let input = syn::parse_macro_input!(args as Input);
+    expand(level, input).into()
+}
 
-    let mut statements: Vec<proc_macro2::TokenStream> = Vec::new();
+fn expand(level: &str, input: Input) -> TokenStream2 {
+    // Validate the outer grammar even when logging is compiled out, without
+    // resolving user expressions or imposing any formatting trait bounds.
+    if !cfg!(any(feature = "tracing", feature = "log", feature = "defmt")) {
+        return quote!(());
+    }
 
-    #[cfg(feature = "tracing")]
-    statements.push(quote! {
-        tracing::#level_ident!("{}", args);
-    });
-    #[cfg(feature = "log")]
-    statements.push(quote! {
-        log::#level_ident!("{}", args);
-    });
-    #[cfg(feature = "defmt")]
-    statements.push(quote! {
-        defmt::#level_ident!("{}", defmt::Display2Format(&args));
-    });
+    let backend = |name: &str| {
+        let name = Ident::new(name, Span::call_site());
+        match &input.root {
+            Some(root) => quote!(#root::__private::#name),
+            // Preserve direct usage of the err_trail_macros crate as well.
+            None => quote!(::#name),
+        }
+    };
+    let level_ident = Ident::new(level, Span::call_site());
+    let message_ident = Ident::new("__err_trail_message", Span::mixed_site());
+    let target = input
+        .target
+        .as_ref()
+        .map_or_else(|| quote!(::core::module_path!()), |target| quote!(#target));
+    // Inline consts enforce tracing's static target requirement without a
+    // generated item that could shadow a caller's constant of the same name.
+    let target = quote!({ const { ::core::convert::identity::<&str>(#target) } });
 
-    #[cfg(any(feature = "tracing", feature = "log", feature = "defmt"))]
-    let expanded = quote! {{
-        #[allow(unused_variables)]
-        let args = format_args!(#args_tokens);
-        #(#statements)*
-    }};
-    #[cfg(not(any(feature = "tracing", feature = "log", feature = "defmt")))]
-    let expanded = quote! {};
+    let mut values = Vec::new();
+    let mut bindings = Vec::new();
+    let mut tracing_fields = Vec::new();
+    let mut text_args = Vec::new();
+    let mut text_format = String::new();
+    if input.message.is_some() {
+        text_format.push_str("{}");
+        text_args.push(quote!(#message_ident));
+        tracing_fields.push(quote!(message = #message_ident));
+    }
+    for (index, field) in input.fields.iter().enumerate() {
+        let binding = Ident::new(&format!("__err_trail_field_{index}"), Span::mixed_site());
+        let name = &field.name;
+        let value = &field.value;
+        let modifier = match field.format {
+            Format::Value => quote!(),
+            Format::Debug => quote!(?),
+            Format::Display => quote!(%),
+        };
+        tracing_fields.push(quote!(#name = #modifier #binding));
+        values.push(quote!(&(#value)));
+        bindings.push(quote!(#binding));
+        if !text_format.is_empty() {
+            text_format.push(' ');
+        }
+        // Field names are data, even when they contain format-string braces.
+        text_format.push_str(&name.value().replace('{', "{{").replace('}', "}}"));
+        text_format.push_str(match field.format {
+            Format::Display => "={}",
+            Format::Value | Format::Debug => "={:?}",
+        });
+        text_args.push(quote!(#binding));
+    }
+    if let Some(message) = input.message {
+        values.push(quote!(::core::format_args!(#message)));
+        bindings.push(quote!(#message_ident));
+    }
 
-    TokenStream::from(expanded)
+    let mut statements = Vec::new();
+    if cfg!(feature = "tracing") {
+        let tracing = backend("tracing");
+        let level = Ident::new(&level.to_uppercase(), Span::call_site());
+        statements.push(quote! {
+            #tracing::event!(target: #target, #tracing::Level::#level, {
+                #(#tracing_fields,)*
+            });
+        });
+    }
+    if cfg!(feature = "log") {
+        let log = backend("log");
+        statements.push(quote! {
+            #log::#level_ident!(target: #target, #text_format, #(#text_args),*);
+        });
+    }
+    if cfg!(feature = "defmt") {
+        let defmt = backend("defmt");
+        let text = quote!(defmt::Display2Format(
+            &::core::format_args!(#text_format, #(#text_args),*)
+        ));
+        let statement = if input.target.is_some() {
+            quote!(defmt::#level_ident!("[{}] {}", #target, #text);)
+        } else {
+            quote!(defmt::#level_ident!("{}", #text);)
+        };
+        // defmt's procedural macros themselves emit paths rooted at `defmt`.
+        // Supply that name locally, without requiring a downstream dependency
+        // or bringing it into scope while evaluating the user's expressions.
+        statements.push(quote!({
+            use #defmt as defmt;
+            #statement
+        }));
+    }
+
+    quote! {{
+        // The match keeps temporary field values and format_args! operands
+        // alive for every backend, without moving caller-owned values.
+        match (#(#values,)*) {
+            (#(#bindings,)*) => { #(#statements)* }
+        }
+    }}
 }
 
 #[proc_macro]

@@ -1,0 +1,17 @@
+error: constant-expression field names are not supported
+ --> tests/ui/constant_names.rs:2:32
+  |
+2 |     err_trail::info!({ FIELD } = 1);
+  |                                ^
+
+error: constant-expression field names are not supported
+ --> tests/ui/constant_names.rs:3:33
+  |
+3 |     err_trail::info!(value = 1, { FIELD } = 2);
+  |                                 ^
+
+error: constant-expression field names are not supported
+ --> tests/ui/constant_names.rs:4:24
+  |
+4 |     err_trail::info!({ { FIELD } = 3 });
+  |                        ^
