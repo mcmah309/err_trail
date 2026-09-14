@@ -61,8 +61,11 @@ fn expand(level: &str, input: Input) -> TokenStream2 {
         if !text_format.is_empty() {
             text_format.push(' ');
         }
-        // Field names are data, even when they contain format-string braces.
-        text_format.push_str(&name.value().replace('{', "{{").replace('}', "}}"));
+        // Match tracing-subscriber's default text labels without changing the
+        // structured field names supplied to tracing. Braces remain literal.
+        let name = name.value();
+        let name = name.strip_prefix("r#").unwrap_or(&name);
+        text_format.push_str(&name.replace('{', "{{").replace('}', "}}"));
         text_format.push_str(match field.format {
             Format::Display => "={}",
             Format::Value | Format::Debug => "={:?}",
@@ -95,8 +98,10 @@ fn expand(level: &str, input: Input) -> TokenStream2 {
         let text = quote!(defmt::Display2Format(
             &::core::format_args!(#text_format, #(#text_args),*)
         ));
+        // defmt has no target metadata. Preserve explicit targets using
+        // tracing's default text style; otherwise leave the message unprefixed.
         let statement = if input.target.is_some() {
-            quote!(defmt::#level_ident!("[{}] {}", #target, #text);)
+            quote!(defmt::#level_ident!("{}: {}", #target, #text);)
         } else {
             quote!(defmt::#level_ident!("{}", #text);)
         };

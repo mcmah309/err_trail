@@ -71,6 +71,7 @@ dependencies = [
  "lazy_static",
  "log",
  "tracing",
+ "tracing-subscriber",
  "tracing-test",
  "trybuild",
 ]

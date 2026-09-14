@@ -251,9 +251,12 @@ fn defmt_uses_core_formatting_for_fields() {
     let display = DisplayOnly;
     let debug_value = DebugOnly(7);
     defmt::export::fetch_bytes();
-    err_trail::error!(count = 3u64, %display, ?debug_value, "Retry {}", 2);
+    err_trail::error!(count = 3u64, %display, ?debug_value, r#type = "request", "Retry {}", 2);
     let bytes = defmt::export::fetch_bytes();
-    let expected = b"Retry 2 count=3 display=display value debug_value=DebugOnly(7)";
+    let target = module_path!().as_bytes();
+    assert!(!bytes.windows(target.len()).any(|part| part == target));
+    let expected =
+        b"Retry 2 count=3 display=display value debug_value=DebugOnly(7) type=\"request\"";
     assert!(bytes.windows(expected.len()).any(|part| part == expected));
     err_trail::error!(target: "network", { count = 3u64 });
     let bytes = defmt::export::fetch_bytes();
