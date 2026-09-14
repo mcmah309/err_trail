@@ -19,14 +19,11 @@ jobs:
         features: ["", "tracing", "log", "defmt", "tracing,log", "tracing,defmt", "log,defmt", "tracing,log,defmt"]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v7
     - name: Set up Rust
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@stable
       with:
-        toolchain: stable
-        profile: minimal
         components: rustfmt
-        override: true
     - name: Check formatting
       run: cargo fmt --all -- --check
     - name: Test workspace
