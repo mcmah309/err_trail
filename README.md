@@ -25,20 +25,21 @@ All methods and macros work with the generic backends. Like previously mentioned
 
 ### Macros
 
-The `error!`, `warn!`, `info!`, `debug!`, and `trace!` macros use **tracing's
+The `trace!`, `debug!`, `info!`, `warn!`, and `error!` macros use **tracing's
 message and field syntax**, including `%` and `?`, across the `tracing`, `log`,
 and `defmt` backends.
 
 ```rust
-use err_trail::{error, warn, info, debug, trace};
+use err_trail::{debug, error, info, trace, warn};
 
-fn main() {
-    error!("An error occurred: {}", "disk full");
-    warn!("This is a warning: {}", "high memory usage");
-    info!("Some info: {}", "service started");
-    debug!("Debugging value: {:?}", vec![1, 2, 3]);
-    trace!("Trace log: {}", "function entered");
-}
+let endpoint = "https://api.example.com";
+let retry_delays_ms = [100, 200, 400];
+
+trace!(attempt = 1, "Preparing request");
+debug!(?retry_delays_ms, "Configured retries");
+info!("Connecting to {endpoint}");
+warn!(attempt = 1, "Request timed out; retrying");
+error!(%endpoint, attempts = 4, "Request failed after exhausting retries");
 ```
 
 See [Macro syntax](#macro-syntax) for examples and supported syntax.
