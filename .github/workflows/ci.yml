@@ -21,7 +21,8 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - name: Set up Rust
-      uses: dtolnay/rust-toolchain@stable
+      # Compile-fail snapshots include compiler diagnostics; update them with Rust.
+      uses: dtolnay/rust-toolchain@1.98.1
       with:
         components: rustfmt
     - name: Check formatting
