@@ -2,4 +2,4 @@
 resolver = "3"
 members = ["err_trail", "err_trail_macros"]
 
-exclude = ["test_no_std"]
+exclude = ["test_no_std", "test_feature_unification"]

@@ -1,0 +1,23 @@
+[workspace]
+resolver = "3"
+members = ["library"]
+
+[package]
+name = "test_feature_unification"
+edition = "2024"
+publish = false
+
+[dependencies]
+feature_free_library = { path = "library" }
+trail = { package = "err_trail", path = "../err_trail", default-features = false }
+tracing = { version = "0.1", optional = true }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt"], optional = true }
+log = { version = "0.4", features = ["std"], optional = true }
+# Capture defmt output on the host without an embedded logger.
+defmt = { version = "1", features = ["unstable-test"], optional = true }
+
+[features]
+default = []
+tracing = ["trail/tracing", "dep:tracing", "dep:tracing-subscriber"]
+log = ["trail/log", "dep:log"]
+defmt = ["trail/defmt", "dep:defmt"]

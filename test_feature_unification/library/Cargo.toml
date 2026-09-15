@@ -1,0 +1,9 @@
+[package]
+name = "feature_free_library"
+edition = "2024"
+publish = false
+
+[dependencies]
+# Only the parent selects backends. This library has no backend dependencies
+# or features of its own, including forwarding features.
+trail = { package = "err_trail", path = "../../err_trail", default-features = false }
