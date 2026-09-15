@@ -12,10 +12,35 @@ fn generate_logger_impl(level: &str, args: TokenStream) -> TokenStream {
 }
 
 fn expand(level: &str, input: Input) -> TokenStream2 {
-    // Validate the outer grammar even when logging is compiled out, without
-    // resolving user expressions or imposing any formatting trait bounds.
     if !cfg!(any(feature = "tracing", feature = "log", feature = "defmt")) {
-        return quote!(());
+        let fields = input.fields.iter().map(|field| {
+            let value = &field.value;
+            match field.format {
+                Format::Value => quote!(let _ = &(#value);),
+                // The extra reference supports unsized values such as str,
+                // slices, and trait objects when coercing to the trait object.
+                Format::Debug => quote!(let _: &dyn ::core::fmt::Debug = &&(#value);),
+                Format::Display => quote!(let _: &dyn ::core::fmt::Display = &&(#value);),
+            }
+        });
+        let target = input
+            .target
+            .as_ref()
+            .map(|target| quote!(let _ = &(#target);));
+        let message = input
+            .message
+            .as_ref()
+            .map(|message| quote!(let _ = ::core::format_args!(#message);));
+        // Count logging arguments as used without evaluating them. Borrowing
+        // fields avoids moves; format_args! also handles implicit message
+        // captures such as "{error}". Bare fields have backend-specific bounds.
+        return quote! {{
+            if false {
+                #target
+                #(#fields)*
+                #message
+            }
+        }};
     }
 
     let backend = |name: &str| {

@@ -4,7 +4,7 @@ use trail::ErrContext;
 
 // Compiled for every backend combination. This is a library so the final
 // binary can supply any allocator and logger required by its chosen backends.
-#[allow(unused_variables)]
+#[deny(unused_variables)]
 pub fn log() {
     let x: Result<u32, &str> = Err("error value");
     let _: Result<u32, &str> = x.error("context around");

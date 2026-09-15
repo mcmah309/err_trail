@@ -15,6 +15,42 @@ impl fmt::Display for DisplayOnly {
 struct DebugOnly(u8);
 
 #[test]
+#[deny(unused_variables)]
+fn logging_only_variables_count_as_used() {
+    enum ServerError {
+        Any(String),
+    }
+    match ServerError::Any(String::from("request failed")) {
+        ServerError::Any(error) => {
+            err_trail::error!(error = ?error);
+        }
+    }
+
+    let shorthand = String::from("shorthand");
+    err_trail::warn!(?shorthand);
+    let display = DisplayOnly;
+    err_trail::info!(%display);
+    let bare = 3u64;
+    err_trail::debug!(bare);
+    let positional = String::from("positional");
+    err_trail::trace!("{}", positional);
+    let captured = String::from("captured");
+    err_trail::error!("{captured}");
+    let named = String::from("named");
+    err_trail::warn!("{value}", value = named);
+
+    struct Request {
+        id: u64,
+    }
+    let request = Request { id: 42 };
+    err_trail::info!({ request.id, });
+    let computed = || 42u64;
+    err_trail::debug!(answer = computed());
+    let raw = String::from("raw");
+    err_trail_macros::trace!(value = ?raw);
+}
+
+#[test]
 fn syntax_borrowing_and_single_evaluation() {
     use err_trail::{debug, error, info, trace, warn};
 
@@ -74,13 +110,49 @@ fn syntax_borrowing_and_single_evaluation() {
     assert_eq!(debug_value.0, 7);
 }
 
+#[test]
+fn formatted_fields_borrow_unsized_values() {
+    let text = String::from("owned");
+    let bytes: &[u8] = &[1, 2, 3];
+    let display: &dyn fmt::Display = &text;
+    let debug: &dyn fmt::Debug = &bytes;
+    err_trail::info!(text = %*text.as_str(), bytes = ?*bytes);
+    err_trail::warn!(display = %*display, debug = ?*debug);
+    assert_eq!(text, "owned");
+}
+
 #[cfg(not(any(feature = "tracing", feature = "log", feature = "defmt")))]
 #[test]
-fn no_backend_does_not_resolve_or_typecheck_values() {
+#[deny(unused_variables)]
+fn no_backend_does_not_require_bare_field_formatting() {
     struct NoFormatting;
     let value = NoFormatting;
-    err_trail::info!(target: nonexistent::TARGET, %value, ?missing, "{}", nonexistent());
-    let _: () = err_trail::info!(?value);
+    let _: () = err_trail::info!(value);
+}
+
+#[cfg(not(any(feature = "tracing", feature = "log", feature = "defmt")))]
+#[test]
+#[deny(unused_variables)]
+fn no_backend_does_not_evaluate_or_format_arguments() {
+    let target = || -> &'static str { panic!("target evaluated") };
+    let field = || -> DebugOnly { panic!("field evaluated") };
+    let message = || -> &'static str { panic!("message argument evaluated") };
+
+    let _: () = err_trail::error!(target: target(), value = ?field(), "{}", message());
+
+    struct PanicFormatting;
+    impl fmt::Display for PanicFormatting {
+        fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
+            panic!("message formatted")
+        }
+    }
+    impl fmt::Debug for PanicFormatting {
+        fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
+            panic!("field formatted")
+        }
+    }
+    let value = PanicFormatting;
+    err_trail::info!(%value, ?value, "{value}");
 }
 
 #[cfg(feature = "tracing")]

@@ -1,0 +1,30 @@
+error[E0277]: `NoFormatting` doesn't implement `Debug`
+ --> tests/ui/no_backend/format_traits.rs:5:5
+  |
+5 |     err_trail::error!(?value);
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Debug` is not implemented for `NoFormatting`
+  |
+  = note: add `#[derive(Debug)]` to `NoFormatting` or manually `impl Debug for NoFormatting`
+  = note: required for `&NoFormatting` to implement `Debug`
+  = note: required for the cast from `&&NoFormatting` to `&dyn Debug`
+  = note: this error originates in the macro `$crate::__private::error` which comes from the expansion of the macro `err_trail::error` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider annotating `NoFormatting` with `#[derive(Debug)]`
+  |
+1 + #[derive(Debug)]
+2 | struct NoFormatting;
+  |
+
+error[E0277]: `NoFormatting` doesn't implement `std::fmt::Display`
+ --> tests/ui/no_backend/format_traits.rs:6:5
+  |
+6 |     err_trail::warn!(%value);
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+  |
+help: the trait `std::fmt::Display` is not implemented for `NoFormatting`
+ --> tests/ui/no_backend/format_traits.rs:1:1
+  |
+1 | struct NoFormatting;
+  | ^^^^^^^^^^^^^^^^^^^
+  = note: required for `&NoFormatting` to implement `std::fmt::Display`
+  = note: required for the cast from `&&NoFormatting` to `&dyn std::fmt::Display`
+  = note: this error originates in the macro `$crate::__private::warn` which comes from the expansion of the macro `err_trail::warn` (in Nightly builds, run with -Z macro-backtrace for more info)
