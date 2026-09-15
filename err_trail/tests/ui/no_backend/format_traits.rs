@@ -1,7 +1,6 @@
-struct NoFormatting;
-
 fn main() {
-    let value = NoFormatting;
+    // A closure lacks both traits without version-specific derive suggestions.
+    let value = || {};
     err_trail::error!(?value);
     err_trail::warn!(%value);
 }

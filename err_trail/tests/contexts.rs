@@ -231,14 +231,16 @@ mod tracing_tests {
 #[cfg(test)]
 mod log {
     use err_trail::{ErrContext, NoneContext, debug, error, info, trace, warn};
-    use flaky_test::flaky_test;
-    use lazy_static::lazy_static;
     use log::{Level, Metadata, Record};
-    use std::sync::{Arc, Mutex};
+    use std::cell::RefCell;
+    use std::sync::Once;
 
-    struct TestLogger {
-        logs: Arc<Mutex<Vec<String>>>,
+    // The logger is global, but each parallel test owns its captured messages.
+    thread_local! {
+        static LOGS: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
     }
+
+    struct TestLogger;
 
     impl log::Log for TestLogger {
         fn enabled(&self, metadata: &Metadata) -> bool {
@@ -247,37 +249,46 @@ mod log {
 
         fn log(&self, record: &Record) {
             if self.enabled(record.metadata()) {
-                let mut logs = self.logs.lock().unwrap();
-                logs.push(format!("{}", record.args()));
+                let message = record.args().to_string();
+                LOGS.with(|logs| logs.borrow_mut().push(message));
             }
         }
 
         fn flush(&self) {}
     }
 
-    lazy_static! {
-        static ref LOGS: Arc<Mutex<Vec<String>>> = {
-            let logs = Arc::new(Mutex::new(Vec::new()));
-            let test_logger = TestLogger { logs: logs.clone() };
-
-            log::set_boxed_logger(Box::new(test_logger)).unwrap();
-            log::set_max_level(log::LevelFilter::Trace);
-
-            logs
-        };
-    }
-
     fn logs_contain(expected: &str) -> bool {
-        let logs = LOGS.lock().unwrap();
-        logs.iter().any(|log| log.contains(expected))
+        LOGS.with(|logs| logs.borrow().iter().any(|log| log.contains(expected)))
     }
 
     fn clear_logs() {
-        let mut logs = LOGS.lock().unwrap();
-        logs.clear();
+        static INIT: Once = Once::new();
+        INIT.call_once(|| {
+            log::set_logger(&TestLogger).unwrap();
+            log::set_max_level(log::LevelFilter::Trace);
+        });
+        LOGS.with(|logs| logs.borrow_mut().clear());
     }
 
-    #[flaky_test]
+    #[test]
+    fn log_capture_is_isolated_between_threads() {
+        clear_logs();
+        error!("message from the first test");
+
+        std::thread::spawn(|| {
+            clear_logs();
+            error!("message from the second test");
+            assert!(logs_contain("message from the second test"));
+            assert!(!logs_contain("message from the first test"));
+        })
+        .join()
+        .unwrap();
+
+        assert!(logs_contain("message from the first test"));
+        assert!(!logs_contain("message from the second test"));
+    }
+
+    #[test]
     fn test_error() {
         clear_logs();
         let result: Result<(), &str> = Err("error");
@@ -286,7 +297,7 @@ mod log {
         assert!(logs_contain("An error occurred"));
     }
 
-    #[flaky_test]
+    #[test]
     fn test_warn() {
         clear_logs();
         let result: Result<(), &str> = Err("warning");
@@ -295,7 +306,7 @@ mod log {
         assert!(logs_contain("A warning occurred"));
     }
 
-    #[flaky_test]
+    #[test]
     fn test_with_error() {
         clear_logs();
         let result: Result<(), &str> = Err("error");
@@ -304,7 +315,7 @@ mod log {
         assert!(logs_contain("An error occurred: `error`"));
     }
 
-    #[flaky_test]
+    #[test]
     fn test_with_warn() {
         clear_logs();
         let result: Result<(), &str> = Err("warning");
@@ -313,7 +324,7 @@ mod log {
         assert!(logs_contain("A warning occurred: `warning`"));
     }
 
-    #[flaky_test]
+    #[test]
     fn test_ok_as_error() {
         clear_logs();
         let result: Result<(), &str> = Err("consumed error");
@@ -322,7 +333,7 @@ mod log {
         assert!(logs_contain("consumed error"));
     }
 
-    #[flaky_test]
+    #[test]
     fn test_ok_as_warn() {
         clear_logs();
         let result: Result<(), &str> = Err("consumed warning");
@@ -331,7 +342,7 @@ mod log {
         assert!(logs_contain("consumed warning"));
     }
 
-    #[flaky_test]
+    #[test]
     fn test_option_error() {
         clear_logs();
         let option: Option<()> = None;
@@ -340,7 +351,7 @@ mod log {
         assert!(logs_contain("Option was none"));
     }
 
-    #[flaky_test]
+    #[test]
     fn test_option_warn() {
         clear_logs();
         let option: Option<()> = None;
@@ -349,7 +360,7 @@ mod log {
         assert!(logs_contain("Option was none"));
     }
 
-    #[flaky_test]
+    #[test]
     fn test_option_with_error() {
         clear_logs();
         let option: Option<()> = None;
@@ -358,7 +369,7 @@ mod log {
         assert!(logs_contain("Lazy error context"));
     }
 
-    #[flaky_test]
+    #[test]
     fn test_option_with_warn() {
         clear_logs();
         let option: Option<()> = None;
@@ -367,7 +378,7 @@ mod log {
         assert!(logs_contain("Lazy warn context"));
     }
 
-    #[flaky_test]
+    #[test]
     fn test_info() {
         clear_logs();
         let result: Result<(), &str> = Err("info");
@@ -376,7 +387,7 @@ mod log {
         assert!(logs_contain("An info occurred"));
     }
 
-    #[flaky_test]
+    #[test]
     fn test_debug() {
         clear_logs();
         let result: Result<(), &str> = Err("debug");
@@ -385,7 +396,7 @@ mod log {
         assert!(logs_contain("A debug occurred"));
     }
 
-    #[flaky_test]
+    #[test]
     fn test_trace() {
         clear_logs();
         let result: Result<(), &str> = Err("trace");
@@ -394,7 +405,7 @@ mod log {
         assert!(logs_contain("A trace occurred"));
     }
 
-    #[flaky_test]
+    #[test]
     fn test_with_info() {
         clear_logs();
         let result: Result<(), &str> = Err("info");
@@ -403,7 +414,7 @@ mod log {
         assert!(logs_contain("An info occurred: `info`"));
     }
 
-    #[flaky_test]
+    #[test]
     fn test_with_debug() {
         clear_logs();
         let result: Result<(), &str> = Err("debug");
@@ -412,7 +423,7 @@ mod log {
         assert!(logs_contain("A debug occurred: `debug`"));
     }
 
-    #[flaky_test]
+    #[test]
     fn test_with_trace() {
         clear_logs();
         let result: Result<(), &str> = Err("trace");
@@ -421,7 +432,7 @@ mod log {
         assert!(logs_contain("A trace occurred: `trace`"));
     }
 
-    #[flaky_test]
+    #[test]
     fn test_option_info() {
         clear_logs();
         let option: Option<()> = None;
@@ -430,7 +441,7 @@ mod log {
         assert!(logs_contain("Option was none"));
     }
 
-    #[flaky_test]
+    #[test]
     fn test_option_debug() {
         clear_logs();
         let option: Option<()> = None;
@@ -439,7 +450,7 @@ mod log {
         assert!(logs_contain("Option was none"));
     }
 
-    #[flaky_test]
+    #[test]
     fn test_option_trace() {
         clear_logs();
         let option: Option<()> = None;
@@ -448,7 +459,7 @@ mod log {
         assert!(logs_contain("Option was none"));
     }
 
-    #[flaky_test]
+    #[test]
     fn test_option_with_info() {
         clear_logs();
         let option: Option<()> = None;
@@ -457,7 +468,7 @@ mod log {
         assert!(logs_contain("Lazy info context"));
     }
 
-    #[flaky_test]
+    #[test]
     fn test_option_with_debug() {
         clear_logs();
         let option: Option<()> = None;
@@ -466,7 +477,7 @@ mod log {
         assert!(logs_contain("Lazy debug context"));
     }
 
-    #[flaky_test]
+    #[test]
     fn test_option_with_trace() {
         clear_logs();
         let option: Option<()> = None;

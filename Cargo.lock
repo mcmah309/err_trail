@@ -68,7 +68,6 @@ dependencies = [
  "defmt",
  "err_trail_macros",
  "flaky_test",
- "lazy_static",
  "log",
  "tracing",
  "tracing-subscriber",
